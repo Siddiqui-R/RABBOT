@@ -1,6 +1,6 @@
 param(
     [switch]$Ladder,
-    [string]$TournamentId = '2'
+    [string]$TournamentId = '3'
 )
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
