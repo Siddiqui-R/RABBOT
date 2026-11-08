@@ -1,0 +1,20 @@
+{
+  "name": "rackforge-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "RackForge's SpacetimeDB module (database 'rackforge' on a local SpacetimeDB server)",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "build": "spacetime --config-path ${RACKFORGE_STDB_CONFIG:-$HOME/.config/rackforge/local.toml} build -p .",
+    "publish": "spacetime --config-path ${RACKFORGE_STDB_CONFIG:-$HOME/.config/rackforge/local.toml} publish -s rackforge -p . -y rackforge",
+    "generate": "spacetime --config-path ${RACKFORGE_STDB_CONFIG:-$HOME/.config/rackforge/local.toml} generate --lang typescript --out-dir ../src/backend_bindings -p ."
+  },
+  "dependencies": {
+    "spacetimedb": "2.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "typescript": "^5.9.3"
+  }
+}

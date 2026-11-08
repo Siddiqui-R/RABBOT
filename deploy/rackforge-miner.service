@@ -1,0 +1,20 @@
+# RackForge history miner (systemd user unit template): mirrors maincloud's public
+# scrabblebot tables (anonymous, read-only) into data/miner.sqlite, derives
+# observations, refits bid models hourly and pushes everything to the local
+# rackforge backend. Replace @RACKFORGE_DIR@ and @NODE@ as in rackforge-bot.service.
+[Unit]
+Description=RackForge history miner (maincloud scrabblebot -> SQLite working copy -> rackforge SpacetimeDB backend)
+After=network-online.target rackforge-stdb.service
+Wants=rackforge-stdb.service
+
+[Service]
+WorkingDirectory=@RACKFORGE_DIR@
+ExecStart=@NODE@ @RACKFORGE_DIR@/node_modules/tsx/dist/cli.mjs src/memory/mine.ts --follow --db data/miner.sqlite
+Restart=always
+RestartSec=10
+Nice=10
+StandardOutput=append:@RACKFORGE_DIR@/logs/miner.log
+StandardError=append:@RACKFORGE_DIR@/logs/miner.log
+
+[Install]
+WantedBy=default.target

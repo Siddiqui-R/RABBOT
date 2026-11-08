@@ -1,0 +1,18 @@
+{
+  "note": "Mean of the cross-entropy search after 9 generations (src/brain/tune.ts --setting field --deals 150 --pop 12 --elite 4 --seed 11); the search ended when the field objective saturated near mean place 1.15. Validated with src/brain/eval.ts; see src/brain/README.md. riskCoef is 0: the variance term had no measurable effect either way in eval ablations, so it stays off.",
+  "tunedAt": "2026-10-25T01:32:00Z",
+  "params": {
+    "coinBonus": 0.32,
+    "playMargin": 2.7,
+    "minPlayLen": 2,
+    "lambdaScale": 1.08,
+    "incomeShare": 0.47,
+    "futureScale": 1.07,
+    "futureValueScale": 1.14,
+    "kMax": 13,
+    "rivalWeight": 0.9,
+    "maxOverbid": 4.85,
+    "calibRate": 0.056,
+    "riskCoef": 0
+  }
+}

@@ -1,0 +1,33 @@
+# RackForge's own SpacetimeDB server (systemd user unit template), 127.0.0.1:3013.
+# It has its own port, data dir and JWT keys, separate from any other
+# SpacetimeDB instance and from the global ~/.config/spacetime keys.
+# Replace @STANDALONE@ with the spacetimedb-standalone binary (v2.13.0) and
+# @RACKFORGE_DATA@ with the data root (e.g. ~/.local/share/rackforge, expanded), which
+# holds stdb/ and keys/id_ecdsa{,.pub}: a P-256 key pair in PEM (PKCS#8
+# private key, SPKI public key), e.g.
+#   openssl ecparam -name prime256v1 -genkey -noout | openssl pkcs8 -topk8 -nocrypt -out keys/id_ecdsa
+#   openssl ec -in keys/id_ecdsa -pubout -out keys/id_ecdsa.pub
+[Unit]
+Description=RackForge SpacetimeDB (standalone, 127.0.0.1:3013)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=@RACKFORGE_DATA@
+# The standalone binary directly, not the `spacetime` wrapper: the wrapper
+# prepends the global data dir and JWT key dir. Pinned on purpose: the data
+# dir's format follows the server version, so upgrade it deliberately.
+ExecStart=@STANDALONE@ start --listen-addr 127.0.0.1:3013 --data-dir @RACKFORGE_DATA@/stdb --jwt-pub-key-path @RACKFORGE_DATA@/keys/id_ecdsa.pub --jwt-priv-key-path @RACKFORGE_DATA@/keys/id_ecdsa --non-interactive
+# A database is loaded (commitlog replayed) on its first request, which takes
+# ~20 s with the full history. Touch `rackforge` here so the unit only turns active
+# once it answers, and units ordered After= it start on a warm database.
+# "-": a failure here must not fail the server.
+ExecStartPost=-/usr/bin/curl -s -o /dev/null -m 170 --retry 30 --retry-connrefused --retry-delay 1 -X POST --data "SELECT COUNT(*) AS n FROM meta" http://127.0.0.1:3013/v1/database/rackforge/sql
+TimeoutStartSec=180s
+Restart=on-failure
+RestartSec=2s
+# Give the commitlog time to flush on stop.
+TimeoutStopSec=30s
+
+[Install]
+WantedBy=default.target

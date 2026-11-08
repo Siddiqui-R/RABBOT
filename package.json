@@ -1,0 +1,35 @@
+{
+  "name": "rackforge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --import tsx src/bot.ts",
+    "typecheck": "tsc --noEmit -p .",
+    "test": "node --import tsx --test \"src/**/*.test.ts\"",
+    "bench:words": "tsx src/core/words.bench.ts",
+    "sim": "tsx src/sim/run.ts",
+    "mine": "tsx src/memory/mine.ts",
+    "profiles": "tsx src/memory/profiles.ts",
+    "tune": "tsx src/brain/tune.ts",
+    "bot": "tsx src/bot.ts",
+    "status": "tsx src/monitor/status.ts",
+    "generate": "spacetime generate --lang typescript --out-dir src/module_bindings --module-path ${RACKFORGE_UPSTREAM:-../scrabblebot/spacetimedb}",
+    "test:it": "RACKFORGE_IT=1 node --import tsx --test \"src/**/*.test.ts\"",
+    "rehearse": "tsx scripts/rehearse/run.ts"
+  },
+  "dependencies": {
+    "spacetimedb": "^2.12.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/ws": "^8.5.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0"
+  },
+  "description": "RackForge: a ScrabbleBot entry that remembers every opponent",
+  "engines": {
+    "node": ">=22.5"
+  }
+}

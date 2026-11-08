@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.token-*
+data/*.sqlite*
+logs/
+*.log
+.env
+.env.*
+*.pem
+*.key
+*.token
+credentials.json
+verification.log
