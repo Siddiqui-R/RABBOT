@@ -1,7 +1,7 @@
-// Live bot telemetry into RackForge's backend: every decision-log record goes to
-// rackforge_event (lossless, via createEventSink), and the records the monitor
-// needs are also projected into typed tables: `auction` -> rackforge_decision,
-// `word` -> rackforge_word, `match_end` -> rackforge_match, plus a rackforge_status heartbeat.
+// Live bot telemetry into RABBOT's backend: every decision-log record goes to
+// rabbot_event (lossless, via createEventSink), and the records the monitor
+// needs are also projected into typed tables: `auction` -> rabbot_decision,
+// `word` -> rabbot_word, `match_end` -> rabbot_match, plus a rabbot_status heartbeat.
 //
 // Fire-and-forget by construction: `record()` is synchronous, O(1) and never
 // throws; the typed writes only go out when the sink already has a
@@ -17,7 +17,7 @@ import {
   type EventSink,
   type EventSinkOptions,
   type Heartbeat,
-  type RACKFORGEMatch,
+  type RABBOTMatch,
   type WordLog,
 } from "./client.js";
 
@@ -31,7 +31,7 @@ const id = (v: unknown): bigint | undefined => {
 const i64 = (v: unknown): bigint => BigInt(Math.trunc(n(v) ?? 0));
 const u32 = (v: unknown): number => Math.max(0, Math.trunc(n(v) ?? 0));
 
-/** `auction` record -> rackforge_decision row (undefined when it has no ids). */
+/** `auction` record -> rabbot_decision row (undefined when it has no ids). */
 export function decisionFrom(r: Rec): DecisionLog | undefined {
   const auctionId = id(r.auction);
   const matchId = id(r.match);
@@ -66,7 +66,7 @@ export function decisionFrom(r: Rec): DecisionLog | undefined {
   };
 }
 
-/** `word` record -> rackforge_word row. */
+/** `word` record -> rabbot_word row. */
 export function wordFrom(r: Rec): WordLog | undefined {
   const matchId = id(r.match);
   if (matchId === undefined || typeof r.word !== "string") return undefined;
@@ -83,8 +83,8 @@ export function wordFrom(r: Rec): WordLog | undefined {
   };
 }
 
-/** `match_end` record -> rackforge_match row. */
-export function matchFrom(r: Rec, startedUs?: number): RACKFORGEMatch | undefined {
+/** `match_end` record -> rabbot_match row. */
+export function matchFrom(r: Rec, startedUs?: number): RABBOTMatch | undefined {
   const matchId = id(r.match);
   if (matchId === undefined || r.status === undefined) return undefined;
   const standings = Array.isArray(r.standings) ? (r.standings as Rec[]) : [];
@@ -223,8 +223,8 @@ export interface TelemetryHandle {
 
 /**
  * The one-call hook for a live bot: taps `log` so every record also goes to
- * the rackforge backend, and sends `status()` as a heartbeat every `heartbeatMs`.
- * Never throws and never blocks; with RACKFORGE_TELEMETRY=0, or when the sink can't
+ * the rabbot backend, and sends `status()` as a heartbeat every `heartbeatMs`.
+ * Never throws and never blocks; with RABBOT_TELEMETRY=0, or when the sink can't
  * be built, it returns a no-op handle and the bot runs on its JSONL log alone.
  *
  *   const tel = attachTelemetry(log, () => ({ state, currentMatch, latencyMs, clockOffsetMs, version }));
@@ -236,7 +236,7 @@ export function attachTelemetry(
   o: TelemetryOptions & { heartbeatMs?: number } = {},
 ): TelemetryHandle {
   const noop: TelemetryHandle = { telemetry: null, close: async () => {} };
-  if (process.env.RACKFORGE_TELEMETRY === "0") return noop;
+  if (process.env.RABBOT_TELEMETRY === "0") return noop;
   let t: Telemetry;
   try {
     t = new Telemetry({ ...o, onError: o.onError ?? ((m) => log.warn(m)) });

@@ -1,12 +1,12 @@
 // Tournament-stage stress tests for the brain.
 //
-//   npx tsx src/sim/tournament.ts --table rackforge,clone:59 --games 20 [--stage Swiss|Bracket|Final]
+//   npx tsx src/sim/tournament.ts --table rabbot,clone:59 --games 20 [--stage Swiss|Bracket|Final]
 //       [--series] [--first-price] [--rack 7] [--match-size 6] [--live] [--params JSON]
 //       [--budget MS] [--no-model] [--out FILE] [--seed S]
 //
 // Plays matches in this thread (run several processes for parallelism) with
 // every sealed bid recorded and every agent call timed, and reports per
-// rackforge seat what a tournament cares about: place, Swiss points
+// rabbot seat what a tournament cares about: place, Swiss points
 // (max(matchSize - place, 0), ties share the higher place), last place
 // (Bracket), score, 7+ letter words, and failures: agent exceptions,
 // refused bids/words, slow calls, bids that look absurd, coins and tiles
@@ -15,7 +15,7 @@
 // --stage sets MatchView.tournament for every seat (standings: everyone
 // level). --series plays the Final: FINAL_GAMES heads-up games per deal with
 // the running totals carried in view.tournament.finalTotals, the champion by
-// total score. --live builds rackforge seats in 'live' mode so their time
+// total score. --live builds rabbot seats in 'live' mode so their time
 // budgets are real (wall-clock timings; the machine's load counts).
 
 import * as fs from "node:fs";
@@ -42,11 +42,11 @@ export interface TournamentRunOptions {
   startingRackSize?: number;
   /** Swiss points are max(matchSize - place, 0). Default: the table size. */
   matchSize?: number;
-  /** 'rackforge' seats in 'live' mode (real time budgets). */
+  /** 'rabbot' seats in 'live' mode (real time budgets). */
   live?: boolean;
   budgetMs?: number;
   model?: boolean | string;
-  /** Params for rackforge seats (e.g. a stage-aware flag once the brain has one). */
+  /** Params for rabbot seats (e.g. a stage-aware flag once the brain has one). */
   params?: Record<string, unknown>;
 }
 
@@ -59,7 +59,7 @@ export interface CallTimes {
   calls: number;
 }
 
-/** One rackforge seat's match, with everything a failure hunt needs. */
+/** One rabbot seat's match, with everything a failure hunt needs. */
 export interface SeatReport {
   game: number;
   seatGame: number;
@@ -186,10 +186,10 @@ function playOne(ctx: Ctx, game: number, matchId: number, view: ((ids: number[])
   const seats: MatchSeat[] = plan.seats.map((s, i) => {
     const seed = deriveSeed(plan.dealSeed, "agent", i);
     let agent =
-      s.spec.kind === "rackforge" && ctx.createLive
+      s.spec.kind === "rabbot" && ctx.createLive
         ? ctx.createLive({ params: ctx.run.opts.params, mode: "live", seed, model: ctx.model })
         : ctx.run.registry.create(s.spec, seed);
-    if (agent && s.spec.kind === "rackforge") agent = timed(agent, budgetMs, times[i]!);
+    if (agent && s.spec.kind === "rabbot") agent = timed(agent, budgetMs, times[i]!);
     return { botId: s.botId, isSim: s.isSim, strategy: s.spec.strategy, agent };
   });
   const ids = plan.seats.map((s) => s.botId);
@@ -209,7 +209,7 @@ function playOne(ctx: Ctx, game: number, matchId: number, view: ((ids: number[])
   const totalRounds = out.rounds;
   const reports: SeatReport[] = [];
   out.seats.forEach((s, i) => {
-    if (plan.seats[i]!.spec.kind !== "rackforge") return;
+    if (plan.seats[i]!.spec.kind !== "rabbot") return;
     const place = placeOf(scores, i);
     const words = out.engine.history.filter((e) => e.kind === "word" && e.botId === s.botId) as { word: string }[];
     let maxBid = 0;
@@ -298,8 +298,8 @@ export async function runTournamentConfig(opts: TournamentRunOptions, onProgress
     for (let deal = 0; deal < opts.games; deal++) {
       const totals = new Map<number, number>();
       const games: number[] = [];
-      // The series is scored for the first rackforge seat (self-play: seat 1).
-      const myId = ctx.run.base.find((b) => b.spec.kind === "rackforge")?.botId ?? -1;
+      // The series is scored for the first rabbot seat (self-play: seat 1).
+      const myId = ctx.run.base.find((b) => b.spec.kind === "rabbot")?.botId ?? -1;
       for (let g = 1; g <= FINAL_GAMES; g++) {
         const game = deal * FINAL_GAMES + (g - 1);
         const { out, reports: rs } = playOne(ctx, game, game + 1, (ids) => ({
@@ -401,7 +401,7 @@ export function summarize(r: TournamentRunResult): Record<string, unknown> {
 // ---------- CLI ----------
 
 function parseArgs(argv: string[]): { opts: TournamentRunOptions; out?: string } {
-  const opts: TournamentRunOptions = { table: "rackforge,clone:59", games: 10, seed: 1 };
+  const opts: TournamentRunOptions = { table: "rabbot,clone:59", games: 10, seed: 1 };
   let out: string | undefined;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;

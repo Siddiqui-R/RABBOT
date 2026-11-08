@@ -1,8 +1,8 @@
 // Feed watchdog. Mid-match an auction opens or closes every auction length
 // (1 s by default), so a long silence means the subscription stream has
-// stalled while the socket stays open. This has been observed live: RackForge
+// stalled while the socket stays open. This has been observed live: RABBOT
 // (and a miner on the same host) got nothing from maincloud for ~60 s,
-// then the whole backlog at once after the match had ended; RackForge scored 0
+// then the whole backlog at once after the match had ended; RABBOT scored 0
 // with 10 tiles in hand. A fresh connection resyncs from the
 // cache in about a second, which beats waiting blind.
 

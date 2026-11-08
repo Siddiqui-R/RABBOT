@@ -4,7 +4,7 @@ import { canSpell, countsOf, emptyCounts, totalTiles } from "../core/rules.js";
 import type { AuctionView, MatchView } from "../core/types.js";
 import { getWordEngine } from "../core/words.js";
 import { runMatch, type MatchSeat } from "../sim/engine.js";
-import { createAgent, RackForgeAgent, resolveParams } from "./index.js";
+import { createAgent, RABBOTAgent, resolveParams } from "./index.js";
 import { envOverrides } from "./params.js";
 
 const engine = getWordEngine();
@@ -73,7 +73,7 @@ test("last auction: no bid unless a sim could still play the tile; dump everythi
 });
 
 test("bids are whole numbers within the balance; words are spellable", () => {
-  const agent = createAgent({ mode: "sim", seed: 4 }) as RackForgeAgent;
+  const agent = createAgent({ mode: "sim", seed: 4 }) as RABBOTAgent;
   const view: MatchView = {
     matchId: 5,
     myBotId: 10,
@@ -152,7 +152,7 @@ test("liveCompute only changes live mode; sim replays exactly as without it", ()
   assert.deepEqual(play({ liveCompute: 16 }), play({}));
 });
 
-test("RACKFORGE_PARAMS overrides the file and bad JSON is ignored", () => {
+test("RABBOT_PARAMS overrides the file and bad JSON is ignored", () => {
   assert.deepEqual(envOverrides('{"liveCompute":4,"bogus":1}'), { liveCompute: 4 });
   assert.deepEqual(envOverrides("{not json"), {});
   assert.deepEqual(envOverrides(undefined), {});

@@ -1,5 +1,5 @@
-// Live tests against a throwaway `rackforge-test-<pid>` database on the local rackforge
-// server (rackforge-stdb.service must be running):
+// Live tests against a throwaway `rabbot-test-<pid>` database on the local rabbot
+// server (rabbot-stdb.service must be running):
 //   node --import tsx --test src/backend/backend.test.ts
 
 import assert from "node:assert/strict";
@@ -31,8 +31,8 @@ import {
   TEST_DB,
 } from "./testdb.js";
 
-// Needs rackforge-stdb.service and the writer token; skip cleanly elsewhere.
-const skip = (await serverUp()) ? false : "integration test: set RACKFORGE_IT=1 with the local rackforge server (127.0.0.1:3013) and a writer token";
+// Needs rabbot-stdb.service and the writer token; skip cleanly elsewhere.
+const skip = (await serverUp()) ? false : "integration test: set RABBOT_IT=1 with the local rabbot server (127.0.0.1:3013) and a writer token";
 
 const ts = (us: number) => new Timestamp(BigInt(us));
 
@@ -192,7 +192,7 @@ const bot = (id: bigint, name = `bot${id}`): GBot => ({
   id, name, teamId: id, isSimulated: false, strategy: "Human", createdAt: ts(1000), deletedAt: undefined,
 });
 
-describe("rackforge backend", { timeout: 300_000, skip }, () => {
+describe("rabbot backend", { timeout: 300_000, skip }, () => {
   let w: Backend;
   let anon: Backend;
 
@@ -202,8 +202,8 @@ describe("rackforge backend", { timeout: 300_000, skip }, () => {
     anon = await connectTestAnon();
     await w.subscribeTables([
       "g_bot", "g_auction", "g_rating", "g_match_mined", "d_match_info", "d_match_seat", "d_auction_ctx",
-      "d_bid_obs", "d_play_obs", "market_stat", "opp_stat", "seat_stat", "bid_model", "rackforge_event",
-      "rackforge_decision", "rackforge_word", "rackforge_match", "rackforge_status", "meta",
+      "d_bid_obs", "d_play_obs", "market_stat", "opp_stat", "seat_stat", "bid_model", "rabbot_event",
+      "rabbot_decision", "rabbot_word", "rabbot_match", "rabbot_status", "meta",
     ]);
   });
 
@@ -272,7 +272,7 @@ describe("rackforge backend", { timeout: 300_000, skip }, () => {
     await settle(w);
     assert.equal(w.conn.db.gBot.count(), 0n);
     assert.equal(w.conn.db.meta.count(), 0n);
-    assert.equal(w.conn.db.rackforgeStatus.count(), 0n);
+    assert.equal(w.conn.db.rabbotStatus.count(), 0n);
     // The writer list is private, even to a writer over SQL.
     await assert.rejects(w.sql("SELECT * FROM writer"), /sql 400/);
   });
@@ -392,13 +392,13 @@ describe("rackforge backend", { timeout: 300_000, skip }, () => {
     };
     await w.logDecision(d);
     await settle(w);
-    const first = w.conn.db.rackforgeDecision.auctionId.find(77n);
+    const first = w.conn.db.rabbotDecision.auctionId.find(77n);
     assert.ok(first);
     assert.equal(first.won, undefined);
     await w.logDecision({ ...d, refinedBid: 5n, refineMs: 40, won: true, paid: 3n, winnerBotId: 1n });
     await settle(w);
-    const second = w.conn.db.rackforgeDecision.auctionId.find(77n);
-    assert.equal(w.conn.db.rackforgeDecision.count(), 1n);
+    const second = w.conn.db.rabbotDecision.auctionId.find(77n);
+    assert.equal(w.conn.db.rabbotDecision.count(), 1n);
     assert.equal(second?.won, true);
     assert.equal(second?.paid, 3n);
     assert.equal(second?.at.microsSinceUnixEpoch, first.at.microsSinceUnixEpoch);
@@ -407,7 +407,7 @@ describe("rackforge backend", { timeout: 300_000, skip }, () => {
     await w.logWord({ matchId: 5n, round: 4, word: "QI", reward: 11n, rackBefore: "QIE", thinkMs: 3, ok: false, err: "nope" });
     await w.logMatch({
       matchId: 5n, place: 2, seats: 6, score: 40n, balance: 60n, coinsSpent: 50n, auctionsWon: 9, auctions: 68,
-      words: "QI ZAX", wordPoints: 40n, unplayedTiles: 2, winnerScore: 55n, ratingAfter: 1510, agent: "rackforge",
+      words: "QI ZAX", wordPoints: 40n, unplayedTiles: 2, winnerScore: 55n, ratingAfter: 1510, agent: "rabbot",
       startedAt: ts(10), endedAt: ts(20),
     });
     await w.heartbeat({ state: "idle", latencyMs: 90, clockOffsetMs: -3, version: "t1" });
@@ -424,19 +424,19 @@ describe("rackforge backend", { timeout: 300_000, skip }, () => {
     await w.deleteBidModels([7n]);
     await settle(w);
     const db = w.conn.db;
-    assert.equal(db.rackforgeWord.count(), 1n);
-    assert.equal(db.rackforgeMatch.matchId.find(5n)?.winnerScore, 55n);
-    assert.equal(db.rackforgeStatus.count(), 1n);
-    assert.equal(db.rackforgeStatus.id.find(0)?.state, "playing");
+    assert.equal(db.rabbotWord.count(), 1n);
+    assert.equal(db.rabbotMatch.matchId.find(5n)?.winnerScore, 55n);
+    assert.equal(db.rabbotStatus.count(), 1n);
+    assert.equal(db.rabbotStatus.id.find(0)?.state, "playing");
     assert.equal(w.getMeta("cursor"), "2");
-    assert.deepEqual([...db.rackforgeEvent.iter()].map((e) => e.type), ["match_end"]);
+    assert.deepEqual([...db.rabbotEvent.iter()].map((e) => e.type), ["match_end"]);
     assert.deepEqual([...db.bidModel.iter()].map((m) => [m.botId, m.nObs]), [[0n, 11n]]);
     await w.deleteBidModels();
     await settle(w);
     assert.equal(db.bidModel.count(), 0n);
 
     // One-off SQL over HTTP: decoded rows, options and timestamps.
-    const rows = await w.sql("SELECT * FROM rackforge_status");
+    const rows = await w.sql("SELECT * FROM rabbot_status");
     assert.equal(rows.length, 1);
     assert.equal(rows[0]!.state, "playing");
     assert.equal(rows[0]!.current_match, 9);
@@ -453,7 +453,7 @@ describe("rackforge backend", { timeout: 300_000, skip }, () => {
     await sink.close();
     assert.deepEqual(sink.stats(), { queued: 0, sent: 3, dropped: 0, failures: 0 });
     await settle(w);
-    const evs = [...w.conn.db.rackforgeEvent.iter()].filter((e) => e.matchId === 8n || e.type === "error");
+    const evs = [...w.conn.db.rabbotEvent.iter()].filter((e) => e.matchId === 8n || e.type === "error");
     assert.equal(evs.length, 2);
     assert.equal(evs.find((e) => e.type === "auction")?.auctionId, 801n);
     assert.match(evs.find((e) => e.type === "error")!.json, /truncated/);

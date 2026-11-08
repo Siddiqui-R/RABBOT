@@ -259,7 +259,7 @@ export const GWord = __t.object("GWord", {
 });
 export type GWord = __Infer<typeof GWord>;
 
-export const RACKFORGEDecision = __t.object("RACKFORGEDecision", {
+export const RABBOTDecision = __t.object("RABBOTDecision", {
   auctionId: __t.u64(),
   matchId: __t.u64(),
   round: __t.u32(),
@@ -281,9 +281,9 @@ export const RACKFORGEDecision = __t.object("RACKFORGEDecision", {
   reason: __t.string(),
   at: __t.timestamp(),
 });
-export type RACKFORGEDecision = __Infer<typeof RACKFORGEDecision>;
+export type RABBOTDecision = __Infer<typeof RABBOTDecision>;
 
-export const RACKFORGEEvent = __t.object("RACKFORGEEvent", {
+export const RABBOTEvent = __t.object("RABBOTEvent", {
   id: __t.u64(),
   at: __t.timestamp(),
   type: __t.string(),
@@ -291,18 +291,18 @@ export const RACKFORGEEvent = __t.object("RACKFORGEEvent", {
   auctionId: __t.option(__t.u64()),
   json: __t.string(),
 });
-export type RACKFORGEEvent = __Infer<typeof RACKFORGEEvent>;
+export type RABBOTEvent = __Infer<typeof RABBOTEvent>;
 
-export const RACKFORGEEventIn = __t.object("RACKFORGEEventIn", {
+export const RABBOTEventIn = __t.object("RABBOTEventIn", {
   at: __t.timestamp(),
   type: __t.string(),
   matchId: __t.option(__t.u64()),
   auctionId: __t.option(__t.u64()),
   json: __t.string(),
 });
-export type RACKFORGEEventIn = __Infer<typeof RACKFORGEEventIn>;
+export type RABBOTEventIn = __Infer<typeof RABBOTEventIn>;
 
-export const RACKFORGEMatch = __t.object("RACKFORGEMatch", {
+export const RABBOTMatch = __t.object("RABBOTMatch", {
   matchId: __t.u64(),
   place: __t.option(__t.u32()),
   seats: __t.u32(),
@@ -320,9 +320,9 @@ export const RACKFORGEMatch = __t.object("RACKFORGEMatch", {
   startedAt: __t.option(__t.timestamp()),
   endedAt: __t.timestamp(),
 });
-export type RACKFORGEMatch = __Infer<typeof RACKFORGEMatch>;
+export type RABBOTMatch = __Infer<typeof RABBOTMatch>;
 
-export const RACKFORGEStatus = __t.object("RACKFORGEStatus", {
+export const RABBOTStatus = __t.object("RABBOTStatus", {
   id: __t.u32(),
   heartbeatAt: __t.timestamp(),
   state: __t.string(),
@@ -333,9 +333,9 @@ export const RACKFORGEStatus = __t.object("RACKFORGEStatus", {
   rating: __t.option(__t.i32()),
   rank: __t.option(__t.u32()),
 });
-export type RACKFORGEStatus = __Infer<typeof RACKFORGEStatus>;
+export type RABBOTStatus = __Infer<typeof RABBOTStatus>;
 
-export const RACKFORGEWord = __t.object("RACKFORGEWord", {
+export const RABBOTWord = __t.object("RABBOTWord", {
   id: __t.u64(),
   matchId: __t.u64(),
   round: __t.u32(),
@@ -348,7 +348,7 @@ export const RACKFORGEWord = __t.object("RACKFORGEWord", {
   err: __t.option(__t.string()),
   at: __t.timestamp(),
 });
-export type RACKFORGEWord = __Infer<typeof RACKFORGEWord>;
+export type RABBOTWord = __Infer<typeof RABBOTWord>;
 
 export const MarketStat = __t.object("MarketStat", {
   key: __t.string(),

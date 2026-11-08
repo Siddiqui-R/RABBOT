@@ -1,4 +1,4 @@
-// Opponent model: everything RackForge knows about who it's bidding
+// Opponent model: everything RABBOT knows about who it's bidding
 // against, loaded from data/history.sqlite.
 //
 //   const model = loadOpponentModel();
@@ -579,28 +579,28 @@ class Model implements OpponentModel {
   }
 }
 
-export type RackForgeModel = Model;
+export type RABBOTModel = Model;
 
 /**
  * Where loadOpponentModel() reads when called without a path: a SQLite file
- * (RACKFORGE_MODEL_DB, default data/history.sqlite; rackforge-miner.service keeps
- * data/miner.sqlite current), or with RACKFORGE_MODEL_SOURCE=backend RackForge's
+ * (RABBOT_MODEL_DB, default data/history.sqlite; rabbot-miner.service keeps
+ * data/miner.sqlite current), or with RABBOT_MODEL_SOURCE=backend RABBOT's
  * SpacetimeDB backend, same as passing "stdb:" (src/backend/model-source.ts).
  * The backend source loads in ~3.3 s instead of ~0.25 s and never refits at
  * load, so it is not the default.
  */
 export const DEFAULT_MODEL_SOURCE =
-  process.env.RACKFORGE_MODEL_SOURCE === "backend" ? "stdb:" : (process.env.RACKFORGE_MODEL_DB ?? DEFAULT_DB_PATH);
+  process.env.RABBOT_MODEL_SOURCE === "backend" ? "stdb:" : (process.env.RABBOT_MODEL_DB ?? DEFAULT_DB_PATH);
 
 /**
  * Loads the opponent model. Never throws: with no database it still knows
  * nothing but the market default, and sims are unknown until mined.
- * `dbPath` is a SQLite file, or "stdb:[db[@uri]]" for RackForge's backend.
+ * `dbPath` is a SQLite file, or "stdb:[db[@uri]]" for RABBOT's backend.
  */
 export function loadOpponentModel(
   dbPath: string = DEFAULT_MODEL_SOURCE,
   cfg: ModelConfig = DEFAULT_CONFIG,
-): OpponentModel & RackForgeModel {
+): OpponentModel & RABBOTModel {
   const m = new Model(dbPath, cfg);
   try {
     m.refresh({ budgetMs: 5000 });

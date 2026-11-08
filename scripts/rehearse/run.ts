@@ -1,4 +1,4 @@
-// Full local tournament rehearsal on RackForge's own SpacetimeDB (127.0.0.1:3013).
+// Full local tournament rehearsal on RABBOT's own SpacetimeDB (127.0.0.1:3013).
 //
 //   npx tsx scripts/rehearse/run.ts --tree <bot tree> [--swiss 2] [--cut 3] [--size 4]
 //       [--auction Vickrey|FirstPrice] [--fillers clone:59,clone:12,...] [--rack 5]
@@ -7,7 +7,7 @@
 //
 // What it does, in order:
 //   1. Copies the real game module (the upstream scrabblebot repo's
-//      spacetimedb/, from RACKFORGE_UPSTREAM, default ../scrabblebot/spacetimedb) to a
+//      spacetimedb/, from RABBOT_UPSTREAM, default ../scrabblebot/spacetimedb) to a
 //      work dir, empties its hardcoded seed-admin list (the only change; it is
 //      what lets bootstrap_admin work on a fresh database), and publishes it as
 //      a fresh database `sbrehearsal*` with a scratch CLI config that has its
@@ -16,20 +16,20 @@
 //      (rack size, auction length, a lobby too big for the entrants to fill so
 //      no casual match starts by itself), creates the tournament.
 //   3. One fresh human identity per team: create_team + mint_credential_nonce.
-//   4. Launches RackForge from --tree (nice 5) and every filler from --filler-tree
+//   4. Launches RABBOT from --tree (nice 5) and every filler from --filler-tree
 //      (same bot code, --agent <spec>, nice 15) with BOT_NONCE, telemetry OFF.
-//      Fillers register with TOURNAMENT_ID; RackForge too unless --register auto.
+//      Fillers register with TOURNAMENT_ID; RABBOT too unless --register auto.
 //   5. Starts the tournament once everyone is registered, starts each finals
 //      match (start_next_finals_match) until a champion, and reports every
-//      stage, RackForge's results, deadline misses, refusals, crashes, stalls.
+//      stage, RABBOT's results, deadline misses, refusals, crashes, stalls.
 //   6. Tears down: kills only the process groups it spawned, deletes the
 //      database, removes its replica dir and the token files it caused.
 //
 // Output: <out>/report.md, <out>/summary.json, <out>/<bot>/ (bot logs).
 //
-// Env: RACKFORGE_UPSTREAM (upstream game module dir), SPACETIME_BIN (default
-// ~/.local/bin/spacetime), RACKFORGE_STDB_DATA (the local server's data dir,
-// default ~/.local/share/rackforge/stdb), RACKFORGE_PROTECTED_TREES (colon-separated bot
+// Env: RABBOT_UPSTREAM (upstream game module dir), SPACETIME_BIN (default
+// ~/.local/bin/spacetime), RABBOT_STDB_DATA (the local server's data dir,
+// default ~/.local/share/rabbot/stdb), RABBOT_PROTECTED_TREES (colon-separated bot
 // trees the kit must never launch from, e.g. the deployed bot's directory).
 
 import { execFileSync, spawn, type ChildProcess } from "node:child_process";
@@ -40,14 +40,14 @@ import { setGlobalLogLevel, type Identity } from "spacetimedb";
 import { DbConnection } from "../../src/module_bindings/index.js";
 
 const REPO = path.join(import.meta.dirname, "..", "..");
-const UPSTREAM = process.env.RACKFORGE_UPSTREAM
-  ? path.resolve(process.env.RACKFORGE_UPSTREAM)
+const UPSTREAM = process.env.RABBOT_UPSTREAM
+  ? path.resolve(process.env.RABBOT_UPSTREAM)
   : path.join(REPO, "..", "scrabblebot", "spacetimedb");
 const SPACETIME = process.env.SPACETIME_BIN ?? path.join(os.homedir(), ".local", "bin", "spacetime");
 const HOST = "127.0.0.1:3013";
 const URI = `http://${HOST}`;
-const REPLICAS = path.join(process.env.RACKFORGE_STDB_DATA ?? path.join(os.homedir(), ".local", "share", "rackforge", "stdb"), "replicas");
-const PROTECTED_TREES = (process.env.RACKFORGE_PROTECTED_TREES ?? "").split(":").filter(Boolean).map((t) => path.resolve(t));
+const REPLICAS = path.join(process.env.RABBOT_STDB_DATA ?? path.join(os.homedir(), ".local", "share", "rabbot", "stdb"), "replicas");
+const PROTECTED_TREES = (process.env.RABBOT_PROTECTED_TREES ?? "").split(":").filter(Boolean).map((t) => path.resolve(t));
 const DEFAULT_FILLERS = "clone:59,clone:12,clone:67,clone:45,clone:102,clone:115,clone:69";
 
 // ---------- args ----------
@@ -70,7 +70,7 @@ interface Args {
   finalsDelayMs: number;
   regTimeoutS: number;
   keep: boolean;
-  rackforgeArgs: string[];
+  rabbotArgs: string[];
 }
 
 function parseArgs(argv: string[]): Args {
@@ -88,7 +88,7 @@ function parseArgs(argv: string[]): Args {
       m.set(f.slice(2), v);
     }
   }
-  const known = ["tree", "filler-tree", "swiss", "cut", "size", "auction", "fillers", "rack", "auction-ms", "register", "db", "work", "out", "timeout-min", "finals-delay-ms", "reg-timeout", "rackforge-args"];
+  const known = ["tree", "filler-tree", "swiss", "cut", "size", "auction", "fillers", "rack", "auction-ms", "register", "db", "work", "out", "timeout-min", "finals-delay-ms", "reg-timeout", "rabbot-args"];
   for (const k of m.keys()) if (!known.includes(k)) throw new Error(`unknown flag --${k}`);
   const tree = m.get("tree");
   if (!tree) throw new Error("--tree <bot tree dir> is required");
@@ -116,13 +116,13 @@ function parseArgs(argv: string[]): Args {
     auctionMs: num("auction-ms", 1000),
     register,
     db,
-    work: path.resolve(m.get("work") ?? path.join(os.tmpdir(), "rackforge-rehearse", db)),
+    work: path.resolve(m.get("work") ?? path.join(os.tmpdir(), "rabbot-rehearse", db)),
     out: path.resolve(m.get("out") ?? path.join(REPO, "logs", "rehearse", db)),
     timeoutMin: num("timeout-min", 30),
     finalsDelayMs: num("finals-delay-ms", 2000),
     regTimeoutS: num("reg-timeout", 180),
     keep: flags.has("keep"),
-    rackforgeArgs: (m.get("rackforge-args") ?? "").split(/\s+/).filter(Boolean),
+    rabbotArgs: (m.get("rabbot-args") ?? "").split(/\s+/).filter(Boolean),
   };
 }
 
@@ -158,8 +158,8 @@ function cli(config: string, args: string[], timeout = 180_000): string {
 }
 
 function makeCliConfig(file: string) {
-  fs.writeFileSync(file, `default_server = "rackforge"\n\n[[server_configs]]\nnickname = "rackforge"\nhost = "${HOST}"\nprotocol = "http"\n`, { mode: 0o600 });
-  cli(file, ["login", "--server-issued-login", "rackforge"], 30_000);
+  fs.writeFileSync(file, `default_server = "rabbot"\n\n[[server_configs]]\nnickname = "rabbot"\nhost = "${HOST}"\nprotocol = "http"\n`, { mode: 0o600 });
+  cli(file, ["login", "--server-issued-login", "rabbot"], 30_000);
   fs.chmodSync(file, 0o600);
 }
 
@@ -257,7 +257,7 @@ async function waitFor<T>(what: string, ms: number, f: () => T | undefined | nul
 interface BotRun {
   name: string;
   agent: string;
-  rackforge: boolean;
+  rabbot: boolean;
   botId?: bigint;
   tree: string;
   logDir: string;
@@ -275,15 +275,15 @@ function launch(b: BotRun, a: Args, nonce: string, tournamentId: bigint) {
     STDB_DB: a.db,
     BOT_NAME: b.name,
     BOT_NONCE: nonce,
-    RACKFORGE_LOG_DIR: b.logDir,
-    RACKFORGE_TELEMETRY: "0",
-    RACKFORGE_REHEARSAL: "1",
+    RABBOT_LOG_DIR: b.logDir,
+    RABBOT_TELEMETRY: "0",
+    RABBOT_REHEARSAL: "1",
   };
   delete env.BOT_TOKEN;
   delete env.TOURNAMENT_ID;
-  if (!b.rackforge || a.register === "tid") env.TOURNAMENT_ID = String(tournamentId);
+  if (!b.rabbot || a.register === "tid") env.TOURNAMENT_ID = String(tournamentId);
   const tsx = path.join(b.tree, "node_modules", ".bin", "tsx");
-  const args = ["-n", b.rackforge ? "5" : "15", tsx, "src/bot.ts", "--agent", b.agent, ...(b.rackforge ? a.rackforgeArgs : [])];
+  const args = ["-n", b.rabbot ? "5" : "15", tsx, "src/bot.ts", "--agent", b.agent, ...(b.rabbot ? a.rabbotArgs : [])];
   const child = spawn("nice", args, { cwd: b.tree, env, detached: true, stdio: ["ignore", out, out] });
   fs.closeSync(out);
   b.child = child;
@@ -328,9 +328,9 @@ async function killAll(bots: BotRun[]) {
   }
 }
 
-// ---------- RackForge log analysis ----------
+// ---------- RABBOT log analysis ----------
 
-interface RACKFORGEStats {
+interface RABBOTStats {
   auctions: number;
   misses: number;
   noSendAuctions: number;
@@ -356,8 +356,8 @@ function pctl(xs: number[], p: number): number | null {
   return Math.round(s[Math.min(s.length - 1, Math.floor(p * s.length))]! * 10) / 10;
 }
 
-function analyseRACKFORGE(dir: string): RACKFORGEStats {
-  const st: RACKFORGEStats = {
+function analyseRABBOT(dir: string): RABBOTStats {
+  const st: RABBOTStats = {
     auctions: 0, misses: 0, noSendAuctions: 0, refusedSends: {}, minSlackMs: null, quickMsP99: null, refineMsP99: null,
     wordsOk: 0, wordsRefused: {}, lobbyJoinsOk: 0, lobbyRefused: {}, register: [], errors: [], warnings: 0,
     matchStarts: [], matchEnds: [], auctionsByMatch: {},
@@ -435,9 +435,9 @@ interface MatchReport {
   matchId: number;
   phase: string;
   round: number;
-  seats: { name: string; score: number; place: number; rackforge: boolean }[];
+  seats: { name: string; score: number; place: number; rabbot: boolean }[];
   auctions: number;
-  rackforgeWords7: number;
+  rabbotWords7: number;
   durationS: number;
 }
 
@@ -457,13 +457,13 @@ async function main() {
 
   const tag = a.db.replace(/^sbrehearsal/, "").slice(-6) || "x";
   const bots: BotRun[] = [
-    { name: `RACKFORGE-${tag}`, agent: "rackforge", rackforge: true, tree: a.tree, logDir: path.join(a.out, `RACKFORGE-${tag}`) },
+    { name: `RABBOT-${tag}`, agent: "rabbot", rabbot: true, tree: a.tree, logDir: path.join(a.out, `RABBOT-${tag}`) },
     ...a.fillers.map((f, i) => {
       const name = `f${i + 1}-${f.replace(/[^a-z0-9]/gi, "")}-${tag}`.slice(0, 32);
-      return { name, agent: f, rackforge: false, tree: a.fillerTree, logDir: path.join(a.out, name) };
+      return { name, agent: f, rabbot: false, tree: a.fillerTree, logDir: path.join(a.out, name) };
     }),
   ];
-  const rackforge = bots[0]!;
+  const rabbot = bots[0]!;
   let admin: Conn | undefined;
   let published = false;
   let replica: string | undefined;
@@ -482,7 +482,7 @@ async function main() {
     for (const b of bots) fs.rmSync(path.join(b.tree, `.token-${b.name}`), { force: true });
     if (published && !a.keep) {
       try {
-        cli(cliConfig, ["delete", "-s", "rackforge", "-y", a.db], 60_000);
+        cli(cliConfig, ["delete", "-s", "rabbot", "-y", a.db], 60_000);
         say(`database ${a.db} deleted`);
       } catch (e) {
         problem(`could not delete ${a.db}: ${errMsg(e)}`);
@@ -515,7 +515,7 @@ async function main() {
     const moduleDir = prepareModule(a.work);
     const before = listReplicas();
     const p0 = Date.now();
-    cli(cliConfig, ["publish", "-s", "rackforge", "-p", moduleDir, "-y", "--delete-data=always", a.db]);
+    cli(cliConfig, ["publish", "-s", "rabbot", "-p", moduleDir, "-y", "--delete-data=always", a.db]);
     published = true;
     replica = findOurReplica(before, p0, Date.now());
     say(`published ${a.db} in ${Date.now() - p0} ms (replica ${replica ?? "?"})`);
@@ -586,7 +586,7 @@ async function main() {
 
     // 4. launch
     for (const b of bots) launch(b, a, nonces.get(b.name)!, tid);
-    say(`launched ${bots.length} bots (RackForge registers via ${a.register === "tid" ? "TOURNAMENT_ID" : "its own auto-registration"})`);
+    say(`launched ${bots.length} bots (RABBOT registers via ${a.register === "tid" ? "TOURNAMENT_ID" : "its own auto-registration"})`);
     const regAt = new Map<string, number>();
     const regEnd = Date.now() + a.regTimeoutS * 1000;
     for (;;) {
@@ -643,8 +643,8 @@ async function main() {
         seenTm.add(tm.matchId);
         const seats = [...conn.db.matchParticipant.mpByMatch.filter(tm.matchId)].map((p) => nameOf(p.botId));
         say(`match ${tm.matchId} started: ${tm.phase.tag} round ${tm.round}, ${seats.length} seats: ${seats.join(", ")}`);
-        if (!seats.includes(rackforge.name) && [...conn.db.tournamentEntry.iter()].some((e) => e.botId === rackforge.botId && !e.eliminated)) {
-          if (tm.phase.tag === "Swiss") say(`note: RackForge not at this table`);
+        if (!seats.includes(rabbot.name) && [...conn.db.tournamentEntry.iter()].some((e) => e.botId === rabbot.botId && !e.eliminated)) {
+          if (tm.phase.tag === "Swiss") say(`note: RABBOT not at this table`);
         }
       }
       // Ended tournament matches.
@@ -659,25 +659,25 @@ async function main() {
             name: nameOf(p.botId),
             score: Number(p.score),
             place: 1 + parts.filter((q) => q.score > p.score).length,
-            rackforge: p.botId === rackforge.botId,
+            rabbot: p.botId === rabbot.botId,
           }))
           .sort((x, y) => x.place - y.place);
         const auctions = [...conn.db.auctionResult.resultByMatch.filter(tm.matchId)].length;
-        const rackforgeWords7 = [...conn.db.wordPlay.playByMatch.filter(tm.matchId)].filter((w) => w.botId === rackforge.botId && w.word.length >= 7).length;
+        const rabbotWords7 = [...conn.db.wordPlay.playByMatch.filter(tm.matchId)].filter((w) => w.botId === rabbot.botId && w.word.length >= 7).length;
         const durationS = ms.startedAt && ms.endedAt ? Number(ms.endedAt.microsSinceUnixEpoch - ms.startedAt.microsSinceUnixEpoch) / 1e6 : 0;
-        const rep: MatchReport = { matchId: Number(tm.matchId), phase: tm.phase.tag, round: tm.round, seats, auctions, rackforgeWords7, durationS };
+        const rep: MatchReport = { matchId: Number(tm.matchId), phase: tm.phase.tag, round: tm.round, seats, auctions, rabbotWords7, durationS };
         reports.push(rep);
-        const me = seats.find((s) => s.rackforge);
+        const me = seats.find((s) => s.rabbot);
         let extra = "";
         if (tm.phase.tag === "Final" && me) {
-          const opp = seats.find((s) => !s.rackforge);
+          const opp = seats.find((s) => !s.rabbot);
           finalDiff += me.score - (opp?.score ?? 0);
-          extra = ` | final game ${tm.round}: RackForge ${me.score} vs ${opp?.score}, running diff ${finalDiff >= 0 ? "+" : ""}${finalDiff}`;
+          extra = ` | final game ${tm.round}: RABBOT ${me.score} vs ${opp?.score}, running diff ${finalDiff >= 0 ? "+" : ""}${finalDiff}`;
         }
         say(
           `match ${tm.matchId} ended (${tm.phase.tag} r${tm.round}, ${auctions} auctions, ${durationS.toFixed(0)} s): ` +
             seats.map((s) => `${s.place}. ${s.name} ${s.score}`).join(", ") +
-            (me ? ` | RackForge place ${me.place}/${seats.length}, ${rackforgeWords7} words of 7+` : "") +
+            (me ? ` | RABBOT place ${me.place}/${seats.length}, ${rabbotWords7} words of 7+` : "") +
             extra,
         );
         if (tm.phase.tag === "Swiss") {
@@ -743,31 +743,31 @@ async function main() {
       (x, y) => (x.finalFinishPosition ?? 99) - (y.finalFinishPosition ?? 99) || y.swissPoints - x.swissPoints || Number(y.totalScore - x.totalScore),
     );
     const champion = t?.winnerBotId !== undefined ? nameOf(t.winnerBotId) : null;
-    const rackforgeEntry = entries.find((e) => e.botId === rackforge.botId);
+    const rabbotEntry = entries.find((e) => e.botId === rabbot.botId);
     say(`tournament ${t?.status.tag}; champion ${champion ?? "-"}; ${Math.round((Date.now() - startAt) / 1000)} s after start`);
-    // RackForge in casual matches after elimination (lobby use)
-    const rackforgeMatches = [...conn.db.matchParticipant.mpByBot.filter(rackforge.botId!)].map((p) => p.matchId);
-    const casualRACKFORGE = rackforgeMatches.filter((m) => !seenTm.has(m));
+    // RABBOT in casual matches after elimination (lobby use)
+    const rabbotMatches = [...conn.db.matchParticipant.mpByBot.filter(rabbot.botId!)].map((p) => p.matchId);
+    const casualRABBOT = rabbotMatches.filter((m) => !seenTm.has(m));
     await sleep(3000); // let bot logs flush
-    const stats = analyseRACKFORGE(rackforge.logDir);
-    for (const m of reports.filter((r) => r.seats.some((s) => s.rackforge))) {
+    const stats = analyseRABBOT(rabbot.logDir);
+    for (const m of reports.filter((r) => r.seats.some((s) => s.rabbot))) {
       const logged = stats.auctionsByMatch[m.matchId] ?? 0;
-      if (!stats.matchStarts.includes(m.matchId)) problem(`RackForge log has no match_start for its tournament match ${m.matchId}`);
-      if (logged < m.auctions) problem(`RackForge logged ${logged} auctions of ${m.auctions} in match ${m.matchId}`);
+      if (!stats.matchStarts.includes(m.matchId)) problem(`RABBOT log has no match_start for its tournament match ${m.matchId}`);
+      if (logged < m.auctions) problem(`RABBOT logged ${logged} auctions of ${m.auctions} in match ${m.matchId}`);
     }
     summary = {
       db: a.db,
       args: { ...a, work: undefined },
       tournament: { id: Number(tid), status: t?.status.tag, champion },
-      rackforge: {
-        name: rackforge.name,
-        botId: Number(rackforge.botId),
-        swissPoints: rackforgeEntry?.swissPoints,
-        totalScore: Number(rackforgeEntry?.totalScore ?? 0),
-        finalFinishPosition: rackforgeEntry?.finalFinishPosition ?? null,
-        eliminated: rackforgeEntry?.eliminated,
+      rabbot: {
+        name: rabbot.name,
+        botId: Number(rabbot.botId),
+        swissPoints: rabbotEntry?.swissPoints,
+        totalScore: Number(rabbotEntry?.totalScore ?? 0),
+        finalFinishPosition: rabbotEntry?.finalFinishPosition ?? null,
+        eliminated: rabbotEntry?.eliminated,
         finalDiff,
-        casualMatchesDuringRun: casualRACKFORGE.map(Number),
+        casualMatchesDuringRun: casualRABBOT.map(Number),
         log: stats,
       },
       standings: entries.map((e) => ({
@@ -798,18 +798,18 @@ async function main() {
 }
 
 function renderReport(s: Record<string, unknown>): string {
-  const k = s.rackforge as Record<string, unknown> | undefined;
+  const k = s.rabbot as Record<string, unknown> | undefined;
   const lines = [`# Tournament rehearsal ${s.db}`, ""];
   const tour = s.tournament as Record<string, unknown> | undefined;
   if (tour) lines.push(`Tournament ${tour.id}: ${tour.status}, champion ${tour.champion ?? "-"}.`, "");
   if (k) {
     lines.push(
-      `RackForge (${k.name}, bot ${k.botId}): Swiss points ${k.swissPoints}, total score ${k.totalScore}, finish ${k.finalFinishPosition ?? "-"}, eliminated ${k.eliminated}, final diff ${k.finalDiff}.`,
+      `RABBOT (${k.name}, bot ${k.botId}): Swiss points ${k.swissPoints}, total score ${k.totalScore}, finish ${k.finalFinishPosition ?? "-"}, eliminated ${k.eliminated}, final diff ${k.finalDiff}.`,
       "",
     );
-    const st = k.log as RACKFORGEStats;
+    const st = k.log as RABBOTStats;
     lines.push(
-      "## RackForge log",
+      "## RABBOT log",
       "",
       `- auctions logged ${st.auctions}, deadline misses ${st.misses}, auctions with no bid sent ${st.noSendAuctions}, min slack ${st.minSlackMs} ms, quick p99 ${st.quickMsP99} ms, refine p99 ${st.refineMsP99} ms`,
       `- refused bids: ${JSON.stringify(st.refusedSends)}`,
@@ -823,7 +823,7 @@ function renderReport(s: Record<string, unknown>): string {
   }
   lines.push("## Matches", "");
   for (const m of (s.matches as MatchReport[] | undefined) ?? []) {
-    lines.push(`- ${m.matchId} ${m.phase} r${m.round} (${m.auctions} auctions, ${m.durationS.toFixed(0)} s): ${m.seats.map((x) => `${x.place}. ${x.rackforge ? "**" : ""}${x.name}${x.rackforge ? "**" : ""} ${x.score}`).join(", ")}`);
+    lines.push(`- ${m.matchId} ${m.phase} r${m.round} (${m.auctions} auctions, ${m.durationS.toFixed(0)} s): ${m.seats.map((x) => `${x.place}. ${x.rabbot ? "**" : ""}${x.name}${x.rabbot ? "**" : ""} ${x.score}`).join(", ")}`);
   }
   lines.push("", "## Standings", "");
   for (const e of (s.standings as Record<string, unknown>[] | undefined) ?? []) {

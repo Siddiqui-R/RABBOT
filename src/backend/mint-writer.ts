@@ -1,10 +1,10 @@
-// Mints a writer identity for RackForge's Node processes: connects once with no
+// Mints a writer identity for RABBOT's Node processes: connects once with no
 // token, saves the server-issued token (mode 600) and prints the identity
 // for the owner to allow-list. Never prints the token.
 //
 //   tsx src/backend/mint-writer.ts [--out <path>] [--force]
-//   spacetime --config-path ~/.config/rackforge/local.toml call -s rackforge rackforge \
-//     add_writer '{"__identity__":"0x<identity>"}' '"rackforge-node"'
+//   spacetime --config-path ~/.config/rabbot/local.toml call -s rabbot rabbot \
+//     add_writer '{"__identity__":"0x<identity>"}' '"rabbot-node"'
 
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";

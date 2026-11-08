@@ -334,7 +334,7 @@ export function buildField(
     { halfLifeHours: halfLifeHours * 2, activeHours, minSeats: entrantOpts.minSeats ?? 30, top: entrantOpts.top ?? 16, exclude: entrantOpts.exclude },
   ).map((e) => ({ ...e, name: names.get(e.id) ?? `#${e.id}`, rating: ratings.get(e.id) ?? null }));
   return {
-    note: "Recent real seat compositions (bot ids; 0 = server sim). Replace one seat with RackForge to test against the field as it plays now.",
+    note: "Recent real seat compositions (bot ids; 0 = server sim). Replace one seat with RABBOT to test against the field as it plays now.",
     generatedAt: new Date().toISOString(),
     dataUntil: new Date(until / 1000).toISOString(),
     windowHours,

@@ -6,7 +6,7 @@ import { isProvisional, rankOf, skill, spread } from "./rating.js";
 test("logstats: matches, think times, misses and refusals from log records", () => {
   const recs = parseLines(
     [
-      { t: "2026-10-25T00:00:00Z", type: "start", agent: "rackforge" },
+      { t: "2026-10-25T00:00:00Z", type: "start", agent: "rabbot" },
       { t: "a", type: "auction", quickMs: 0.4, refineMs: 500, budgetMs: 600, misses: 0, sends: [{ ok: true }] },
       { t: "b", type: "auction", quickMs: 1.2, refineMs: 640, budgetMs: 615, misses: 1, sends: [{ ok: true }, { ok: false, err: "Auction window expired" }] },
       { t: "c", type: "auction", quickMs: 0.8, refineSkip: "late", misses: 0, sends: [{ ok: false, err: "Insufficient balance" }] },
@@ -22,7 +22,7 @@ test("logstats: matches, think times, misses and refusals from log records", () 
       .join("\n") + "\n{broken",
   );
   const s = computeStats(recs, 10);
-  assert.equal(s.agent, "rackforge");
+  assert.equal(s.agent, "rabbot");
   assert.equal(s.auctions, 3, "dry-run lines don't count");
   assert.deepEqual(s.quickMs, { n: 3, p50: 0.8, p99: 1.2, max: 1.2 });
   assert.equal(s.refineMs.n, 2);

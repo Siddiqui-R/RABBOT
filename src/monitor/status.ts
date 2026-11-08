@@ -1,13 +1,13 @@
-// How is RackForge doing? Everything comes from RackForge's own SpacetimeDB backend
-// (database `rackforge` on 127.0.0.1:3013): the mirrored leaderboard and history
-// (kept current by rackforge-miner.service) and the live bot's telemetry
-// (rackforge_status / rackforge_decision / rackforge_match).
+// How is RABBOT doing? Everything comes from RABBOT's own SpacetimeDB backend
+// (database `rabbot` on 127.0.0.1:3013): the mirrored leaderboard and history
+// (kept current by rabbot-miner.service) and the live bot's telemetry
+// (rabbot_status / rabbot_decision / rabbot_match).
 //
 //   npx tsx src/monitor/status.ts                one snapshot
 //   npx tsx src/monitor/status.ts --watch 30     refresh every 30 s
 //   npx tsx src/monitor/status.ts --json         the snapshot as JSON
 //
-// Env: RACKFORGE_BOT_NAME (default 'RackForge'), RACKFORGE_STDB_URI, RACKFORGE_STDB_DB.
+// Env: RABBOT_BOT_NAME (default 'RABBOT'), RABBOT_STDB_URI, RABBOT_STDB_DB.
 // status-maincloud.ts is the older view straight from maincloud + local logs.
 
 import { sql, type SqlRow } from "../backend/client.js";
@@ -15,7 +15,7 @@ import { isoUs } from "../backend/sync.js";
 import { isMain } from "../memory/util.js";
 import { isProvisional, rankOf, skill, spread, type Rated } from "./rating.js";
 
-const NAME = process.env.RACKFORGE_BOT_NAME ?? "RackForge";
+const NAME = process.env.RABBOT_BOT_NAME ?? "RABBOT";
 /** Style comparison: each bot's last LAST_N matches within WINDOW_H hours. */
 const WINDOW_H = 48;
 const LAST_N = 30;
@@ -148,7 +148,7 @@ export const byStanding = (a: EntryRow, b: EntryRow) => b.swissPoints - a.swissP
 
 /**
  * The tournament to show (the newest unfinished one, else the newest) and
- * RackForge's place in it. `parts` are g_participant rows of the tournament's
+ * RABBOT's place in it. `parts` are g_participant rows of the tournament's
  * matches (running ones included); `endedMatches` the ids already over.
  */
 export function tournamentView(
@@ -203,16 +203,16 @@ function renderTournament(v: TourView | undefined, meId: number): string[] {
   );
   if (!v.active) {
     const w = v.standings.find((e) => e.botId === t.winnerBotId);
-    L.push(`         finished${w ? `, champion ${w.name}` : ""}${v.me ? `; RackForge ${v.me.finalFinishPosition ? `finished #${v.me.finalFinishPosition}` : `standing ${v.me.rank}/${v.entrants}`}` : "; RackForge was not entered"}`);
+    L.push(`         finished${w ? `, champion ${w.name}` : ""}${v.me ? `; RABBOT ${v.me.finalFinishPosition ? `finished #${v.me.finalFinishPosition}` : `standing ${v.me.rank}/${v.entrants}`}` : "; RABBOT was not entered"}`);
   } else if (!v.me) {
-    L.push(t.status.toLowerCase() === "registration" ? "         RackForge is NOT REGISTERED (register_for_tournament from the bot's credential)" : "         RackForge is not in it (registration has closed)");
+    L.push(t.status.toLowerCase() === "registration" ? "         RABBOT is NOT REGISTERED (register_for_tournament from the bot's credential)" : "         RABBOT is not in it (registration has closed)");
   } else {
     const e = v.me;
     L.push(
-      `         RackForge: standing ${e.rank}/${v.entrants}, ${e.swissPoints} Swiss points, total score ${e.totalScore}${e.eliminated ? ", ELIMINATED" : ""}${e.finalFinishPosition ? `, finish #${e.finalFinishPosition}` : ""}`,
+      `         RABBOT: standing ${e.rank}/${v.entrants}, ${e.swissPoints} Swiss points, total score ${e.totalScore}${e.eliminated ? ", ELIMINATED" : ""}${e.finalFinishPosition ? `, finish #${e.finalFinishPosition}` : ""}`,
     );
   }
-  if (v.finalDiff !== undefined) L.push(`         final: ${v.finalGames} game(s), RackForge minus opponent ${v.finalDiff >= 0 ? "+" : ""}${v.finalDiff}`);
+  if (v.finalDiff !== undefined) L.push(`         final: ${v.finalGames} game(s), RABBOT minus opponent ${v.finalDiff >= 0 ? "+" : ""}${v.finalDiff}`);
   for (const m of v.myMatches) {
     L.push(`         ${m.phase.padEnd(7)} r${String(m.round).padEnd(2)} match ${String(m.matchId).padEnd(7)} ${`${m.place}/${m.seats}`.padEnd(6)} score ${String(m.score).padStart(4)} (best other ${m.bestOther})${m.ended ? "" : "  running"}`);
   }
@@ -220,7 +220,7 @@ function renderTournament(v: TourView | undefined, meId: number): string[] {
   if (show.length) {
     L.push(`         ${"#".padStart(3)} ${"bot".padEnd(16)} ${"pts".padStart(4)} ${"total".padStart(6)}`);
     for (const e of show) {
-      L.push(`         ${String(e.rank).padStart(3)} ${e.name.slice(0, 16).padEnd(16)} ${String(e.swissPoints).padStart(4)} ${String(e.totalScore).padStart(6)}${e.eliminated ? "  out" : ""}${e.finalFinishPosition ? `  #${e.finalFinishPosition}` : ""}${e.botId === meId ? "  <- RackForge" : ""}`);
+      L.push(`         ${String(e.rank).padStart(3)} ${e.name.slice(0, 16).padEnd(16)} ${String(e.swissPoints).padStart(4)} ${String(e.totalScore).padStart(6)}${e.eliminated ? "  out" : ""}${e.finalFinishPosition ? `  #${e.finalFinishPosition}` : ""}${e.botId === meId ? "  <- RABBOT" : ""}`);
     }
   }
   return L;
@@ -270,14 +270,14 @@ export async function snapshot(): Promise<Snapshot> {
     mirror: { newestMatch: 0, newestMinedAgeS: null },
     top: [],
   };
-  const [bots, stats, seatsRaw, sevensRaw, status, decisions, rackforgem, mined] = await Promise.all([
+  const [bots, stats, seatsRaw, sevensRaw, status, decisions, rabbotm, mined] = await Promise.all([
     sql("SELECT id, name, is_simulated, deleted_at FROM g_bot"),
     sql("SELECT * FROM g_bot_stats"),
     sql(`SELECT * FROM d_match_seat WHERE ended_at >= '${since}'`),
     sql(`SELECT match_id, bot_id FROM d_play_obs WHERE ended_at >= '${since}' AND len >= 7`),
-    sql("SELECT * FROM rackforge_status"),
-    sql(`SELECT * FROM rackforge_decision WHERE at >= '${isoUs(nowUs - 6 * 3600e6)}'`),
-    sql("SELECT match_id FROM rackforge_match"),
+    sql("SELECT * FROM rabbot_status"),
+    sql(`SELECT * FROM rabbot_decision WHERE at >= '${isoUs(nowUs - 6 * 3600e6)}'`),
+    sql("SELECT match_id FROM rabbot_match"),
     sql("SELECT match_id, mined_at FROM g_match_mined"),
   ]);
   const name = new Map(bots.map((b) => [n(b.id), String(b.name)]));
@@ -331,11 +331,11 @@ export async function snapshot(): Promise<Snapshot> {
       const key = `${n(p.match_id)}|${meId}`;
       mySevens.set(key, (mySevens.get(key) ?? 0) + 1);
     }
-    // RackForge's own line: its last LAST_N matches (any age), the current release's play.
+    // RABBOT's own line: its last LAST_N matches (any age), the current release's play.
     snap.me = { ...styleOf(meId, NAME, mySeats.map(seatFrom), mySevens), rating: snap.bot?.rating };
   }
 
-  // Top 10 real, ranked bots other than RackForge.
+  // Top 10 real, ranked bots other than RABBOT.
   const top = allRated
     .filter((s) => live.has(s.botId) && s.botId !== meId && !isProvisional(s))
     .sort((a, b) => skill(b) - skill(a))
@@ -359,7 +359,7 @@ export async function snapshot(): Promise<Snapshot> {
   snap.telemetry.refineMs = { p50: pct(rf, 0.5), p99: pct(rf, 0.99) };
   const slack = decisions.filter((d) => n(d.sent_bid) > 0).map((d) => n(d.min_slack_ms));
   snap.telemetry.minSlackMs = slack.length ? Math.min(...slack) : null;
-  snap.telemetry.matchesLogged = rackforgem.length;
+  snap.telemetry.matchesLogged = rabbotm.length;
   let newest = 0;
   let newestAt = 0;
   for (const m of mined) {
@@ -407,9 +407,9 @@ function styleLine(s: Style): string {
 
 export function render(s: Snapshot): string {
   const L: string[] = [];
-  L.push(`RackForge status  ${s.at}  (from the rackforge backend)`);
+  L.push(`RABBOT status  ${s.at}  (from the rabbot backend)`);
   if (s.error) L.push(`ERROR ${s.error}`);
-  if (!s.bot) L.push(`no rated bot named '${NAME}' in the mirror (set RACKFORGE_BOT_NAME?)`);
+  if (!s.bot) L.push(`no rated bot named '${NAME}' in the mirror (set RABBOT_BOT_NAME?)`);
   else {
     const b = s.bot;
     const rank = b.provisional ? "provisional (no rank yet)" : `rank ${b.rank} of ${b.rankedBots} ranked`;
@@ -421,7 +421,7 @@ export function render(s: Snapshot): string {
     `live     ${t.heartbeatAgeS === null ? "no heartbeat yet" : `heartbeat ${f(t.heartbeatAgeS)} s ago, ${t.state}${t.currentMatch ? ` in match ${t.currentMatch}` : ""}, rtt ${f(t.latencyMs)} ms, ${t.version}`}`,
   );
   L.push(
-    `last 6h  ${t.decisions} decisions logged: deadline misses ${t.misses}, refused ${t.refused}, quick p50/p99 ${f(t.quickMs.p50, 1)}/${f(t.quickMs.p99, 1)} ms, refine p50/p99 ${f(t.refineMs.p50, 1)}/${f(t.refineMs.p99, 1)} ms, min slack ${f(t.minSlackMs)} ms; ${t.matchesLogged} matches in rackforge_match`,
+    `last 6h  ${t.decisions} decisions logged: deadline misses ${t.misses}, refused ${t.refused}, quick p50/p99 ${f(t.quickMs.p50, 1)}/${f(t.quickMs.p99, 1)} ms, refine p50/p99 ${f(t.refineMs.p50, 1)}/${f(t.refineMs.p99, 1)} ms, min slack ${f(t.minSlackMs)} ms; ${t.matchesLogged} matches in rabbot_match`,
   );
   L.push(`mirror   newest match ${s.mirror.newestMatch}, last mined ${f(s.mirror.newestMinedAgeS)} s ago`);
   L.push(...renderTournament(s.tournament, s.meId ?? -1));
@@ -441,7 +441,7 @@ export function render(s: Snapshot): string {
   if (s.me && withData.length) {
     const avg = (g: (x: Style) => number) => withData.reduce((a, x) => a + g(x), 0) / withData.length;
     L.push(
-      `RackForge vs top ${withData.length}: tiles ${f(s.me.tiles, 1)} vs ${f(avg((x) => x.tiles), 1)}, price ${f(s.me.price, 1)} vs ${f(avg((x) => x.price), 1)}, word length ${f(s.me.wordLen, 2)} vs ${f(avg((x) => x.wordLen), 2)}, 7+ words/match ${f(s.me.sevenPlus, 2)} vs ${f(avg((x) => x.sevenPlus), 2)}`,
+      `RABBOT vs top ${withData.length}: tiles ${f(s.me.tiles, 1)} vs ${f(avg((x) => x.tiles), 1)}, price ${f(s.me.price, 1)} vs ${f(avg((x) => x.price), 1)}, word length ${f(s.me.wordLen, 2)} vs ${f(avg((x) => x.wordLen), 2)}, 7+ words/match ${f(s.me.sevenPlus, 2)} vs ${f(avg((x) => x.sevenPlus), 2)}`,
     );
   }
   return L.join("\n");
@@ -457,7 +457,7 @@ async function main() {
       const s = await snapshot();
       return json ? JSON.stringify(s, null, 2) : render(s);
     } catch (e) {
-      return `status failed (is rackforge-stdb.service up?): ${e instanceof Error ? e.message : e}`;
+      return `status failed (is rabbot-stdb.service up?): ${e instanceof Error ? e.message : e}`;
     }
   };
   if (!watch) {

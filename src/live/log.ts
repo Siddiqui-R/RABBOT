@@ -27,7 +27,7 @@ export class DecisionLog {
   constructor(
     dir: string,
     readonly prefix = "decisions",
-    readonly tag = "rackforge",
+    readonly tag = "rabbot",
     private readonly echo = true,
   ) {
     this.dir = dir;

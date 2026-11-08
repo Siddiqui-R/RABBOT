@@ -1,4 +1,4 @@
-// npm run sim -- --games 600 --table "rackforge,starter,sim:Aggressive" --pad --swap --workers 18
+// npm run sim -- --games 600 --table "rabbot,starter,sim:Aggressive" --pad --swap --workers 18
 //
 // Plays offline matches and prints, per seat spec: mean score, mean place
 // (ties share the average place), win rate (ties split), each with a 95%
@@ -19,7 +19,7 @@ const DEFAULT_TABLE = "starter,sim:Cheapskate,sim:ValueBidder,sim:Aggressive,sim
 const HELP = `usage: npm run sim -- [options]
   --games N          matches to play (default 100; with --swap rounded up to whole deals)
   --table SPECS      comma-separated seats (default "${DEFAULT_TABLE}")
-                     rackforge | rackforge#<variant> | starter | sim:Cheapskate|ValueBidder|Aggressive
+                     rabbot | rabbot#<variant> | starter | sim:Cheapskate|ValueBidder|Aggressive
                      | clone:<botId> | idle
   --pad              fill to 6 seats from the server's sim pool, like a lobby timeout
   --swap             paired evaluation: play every deal in every seat rotation
@@ -30,9 +30,9 @@ const HELP = `usage: npm run sim -- [options]
   --first-price      FirstPrice auctions instead of Vickrey
   --rack N           starting rack size (default 5)
   --budget MS        refineBid budget handed to agents (default 700)
-  --params JSON      params for 'rackforge' seats
-  --variant NAME=JSON  params for 'rackforge#NAME' seats (repeatable)
-  --model PATH       opponent model db for rackforge seats; --no-model to skip it
+  --params JSON      params for 'rabbot' seats
+  --variant NAME=JSON  params for 'rabbot#NAME' seats (repeatable)
+  --model PATH       opponent model db for rabbot seats; --no-model to skip it
   --records FILE     write every game's record as JSON lines
   --strict           stop on the first agent exception
   --json             print the result as JSON`;

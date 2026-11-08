@@ -22,7 +22,7 @@ export const S = Object.fromEntries(STAT_KEYS.map((k, i) => [k, i])) as Record<S
 export type SeatJob =
   | { kind: "clone"; botId: number; params?: number[] }
   | { kind: "legacy"; botId: number }
-  | { kind: "rackforge"; botId: number; params?: Record<string, unknown> }
+  | { kind: "rabbot"; botId: number; params?: Record<string, unknown> }
   | { kind: "sim"; botId: number; strategy: SimStrategy };
 
 export interface MatchJob {
@@ -35,7 +35,7 @@ export const paramsFromVec = (v: readonly number[]): CloneParams =>
 export const paramsToVec = (p: CloneParams): number[] => PARAM_KEYS.map((k) => p[k]);
 
 export interface Env {
-  createRackForge?: (o: object) => Agent;
+  createRABBOT?: (o: object) => Agent;
 }
 
 /** Plays one match; returns each seat's STAT_KEYS vector, in seat order. */
@@ -48,9 +48,9 @@ export function playJob(env: Env, job: MatchJob): number[][] {
         return { botId: s.botId, isSim: true, strategy: s.strategy };
       case "legacy":
         return { botId: s.botId, isSim: false, agent: createLegacyCloneAgent(s.botId, { seed, model }) };
-      case "rackforge":
-        if (!env.createRackForge) throw new Error("rackforge seat needs src/brain/index.ts");
-        return { botId: s.botId, isSim: false, agent: env.createRackForge({ params: s.params, mode: "sim", seed, model }) };
+      case "rabbot":
+        if (!env.createRABBOT) throw new Error("rabbot seat needs src/brain/index.ts");
+        return { botId: s.botId, isSim: false, agent: env.createRABBOT({ params: s.params, mode: "sim", seed, model }) };
       case "clone":
         return {
           botId: s.botId,

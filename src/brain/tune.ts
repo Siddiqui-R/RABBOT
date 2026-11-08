@@ -4,7 +4,7 @@
 // on identical luck), move the mean toward the best few, shrink the spread.
 // Mean finishing place is the objective (it is what ratings reward).
 //
-//   npm run tune -- [--setting field[,top,rackforges]] [--deals 150] [--gens 20] [--pop 12]
+//   npm run tune -- [--setting field[,top,rabbots]] [--deals 150] [--gens 20] [--pop 12]
 //     [--elite 4] [--workers 18] [--seed 7] [--keys k1,k2] [--write]
 //     [--log FILE]
 //

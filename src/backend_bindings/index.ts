@@ -88,11 +88,11 @@ import GTournamentRow from "./g_tournament_table";
 import GTournamentEntryRow from "./g_tournament_entry_table";
 import GTournamentMatchRow from "./g_tournament_match_table";
 import GWordRow from "./g_word_table";
-import RACKFORGEDecisionRow from "./rackforge_decision_table";
-import RACKFORGEEventRow from "./rackforge_event_table";
-import RACKFORGEMatchRow from "./rackforge_match_table";
-import RACKFORGEStatusRow from "./rackforge_status_table";
-import RACKFORGEWordRow from "./rackforge_word_table";
+import RABBOTDecisionRow from "./rabbot_decision_table";
+import RABBOTEventRow from "./rabbot_event_table";
+import RABBOTMatchRow from "./rabbot_match_table";
+import RABBOTStatusRow from "./rabbot_status_table";
+import RABBOTWordRow from "./rabbot_word_table";
 import MarketStatRow from "./market_stat_table";
 import MetaRow from "./meta_table";
 import OppStatRow from "./opp_stat_table";
@@ -406,76 +406,76 @@ const tablesSchema = __schema({
       { name: 'g_word_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, GWordRow),
-  rackforgeDecision: __table({
-    name: 'rackforge_decision',
+  rabbotDecision: __table({
+    name: 'rabbot_decision',
     indexes: [
-      { accessor: 'auctionId', name: 'rackforge_decision_auction_id_idx_btree', algorithm: 'btree', columns: [
+      { accessor: 'auctionId', name: 'rabbot_decision_auction_id_idx_btree', algorithm: 'btree', columns: [
         'auctionId',
       ] },
-      { accessor: 'decisionByMatch', name: 'rackforge_decision_match_id_idx_btree', algorithm: 'btree', columns: [
+      { accessor: 'decisionByMatch', name: 'rabbot_decision_match_id_idx_btree', algorithm: 'btree', columns: [
         'matchId',
       ] },
     ],
     constraints: [
-      { name: 'rackforge_decision_auction_id_key', constraint: 'unique', columns: ['auctionId'] },
+      { name: 'rabbot_decision_auction_id_key', constraint: 'unique', columns: ['auctionId'] },
     ],
-  }, RACKFORGEDecisionRow),
-  rackforgeEvent: __table({
-    name: 'rackforge_event',
+  }, RABBOTDecisionRow),
+  rabbotEvent: __table({
+    name: 'rabbot_event',
     indexes: [
-      { accessor: 'eventByAt', name: 'rackforge_event_at_idx_btree', algorithm: 'btree', columns: [
+      { accessor: 'eventByAt', name: 'rabbot_event_at_idx_btree', algorithm: 'btree', columns: [
         'at',
       ] },
-      { accessor: 'id', name: 'rackforge_event_id_idx_btree', algorithm: 'btree', columns: [
+      { accessor: 'id', name: 'rabbot_event_id_idx_btree', algorithm: 'btree', columns: [
         'id',
       ] },
-      { accessor: 'eventByMatch', name: 'rackforge_event_match_id_idx_btree', algorithm: 'btree', columns: [
+      { accessor: 'eventByMatch', name: 'rabbot_event_match_id_idx_btree', algorithm: 'btree', columns: [
         'matchId',
       ] },
-      { accessor: 'eventByType', name: 'rackforge_event_type_idx_btree', algorithm: 'btree', columns: [
+      { accessor: 'eventByType', name: 'rabbot_event_type_idx_btree', algorithm: 'btree', columns: [
         'type',
       ] },
     ],
     constraints: [
-      { name: 'rackforge_event_id_key', constraint: 'unique', columns: ['id'] },
+      { name: 'rabbot_event_id_key', constraint: 'unique', columns: ['id'] },
     ],
-  }, RACKFORGEEventRow),
-  rackforgeMatch: __table({
-    name: 'rackforge_match',
+  }, RABBOTEventRow),
+  rabbotMatch: __table({
+    name: 'rabbot_match',
     indexes: [
-      { accessor: 'matchId', name: 'rackforge_match_match_id_idx_btree', algorithm: 'btree', columns: [
+      { accessor: 'matchId', name: 'rabbot_match_match_id_idx_btree', algorithm: 'btree', columns: [
         'matchId',
       ] },
     ],
     constraints: [
-      { name: 'rackforge_match_match_id_key', constraint: 'unique', columns: ['matchId'] },
+      { name: 'rabbot_match_match_id_key', constraint: 'unique', columns: ['matchId'] },
     ],
-  }, RACKFORGEMatchRow),
-  rackforgeStatus: __table({
-    name: 'rackforge_status',
+  }, RABBOTMatchRow),
+  rabbotStatus: __table({
+    name: 'rabbot_status',
     indexes: [
-      { accessor: 'id', name: 'rackforge_status_id_idx_btree', algorithm: 'btree', columns: [
+      { accessor: 'id', name: 'rabbot_status_id_idx_btree', algorithm: 'btree', columns: [
         'id',
       ] },
     ],
     constraints: [
-      { name: 'rackforge_status_id_key', constraint: 'unique', columns: ['id'] },
+      { name: 'rabbot_status_id_key', constraint: 'unique', columns: ['id'] },
     ],
-  }, RACKFORGEStatusRow),
-  rackforgeWord: __table({
-    name: 'rackforge_word',
+  }, RABBOTStatusRow),
+  rabbotWord: __table({
+    name: 'rabbot_word',
     indexes: [
-      { accessor: 'id', name: 'rackforge_word_id_idx_btree', algorithm: 'btree', columns: [
+      { accessor: 'id', name: 'rabbot_word_id_idx_btree', algorithm: 'btree', columns: [
         'id',
       ] },
-      { accessor: 'rackforgeWordByMatch', name: 'rackforge_word_match_id_idx_btree', algorithm: 'btree', columns: [
+      { accessor: 'rabbotWordByMatch', name: 'rabbot_word_match_id_idx_btree', algorithm: 'btree', columns: [
         'matchId',
       ] },
     ],
     constraints: [
-      { name: 'rackforge_word_id_key', constraint: 'unique', columns: ['id'] },
+      { name: 'rabbot_word_id_key', constraint: 'unique', columns: ['id'] },
     ],
-  }, RACKFORGEWordRow),
+  }, RABBOTWordRow),
   marketStat: __table({
     name: 'market_stat',
     indexes: [

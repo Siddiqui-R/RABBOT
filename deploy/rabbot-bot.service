@@ -1,0 +1,27 @@
+# RABBOT live bot (systemd user unit template).
+# Replace @RABBOT_DIR@ with the absolute path of this checkout and @NODE@ with the
+# node binary (Node 22.5+), then:
+#   cp deploy/rabbot-bot.service ~/.config/systemd/user/ && systemctl --user daemon-reload
+#   systemctl --user enable --now rabbot-bot
+# Credentials: the first run needs BOT_TOKEN or BOT_NONCE (see src/bot.ts);
+# afterwards the token is kept in @RABBOT_DIR@/.token-<BOT_NAME> (mode 600). Do
+# not put tokens in this file.
+[Unit]
+Description=RABBOT ScrabbleBot
+After=network-online.target rabbot-stdb.service
+
+[Service]
+WorkingDirectory=@RABBOT_DIR@
+Environment=BOT_NAME=rabbot
+# Opponent model: the miner's working copy (default: data/history.sqlite).
+Environment=RABBOT_MODEL_DB=@RABBOT_DIR@/data/miner.sqlite
+# Optional: tournament-only mode, never join the ladder lobby.
+#Environment=RABBOT_NO_LADDER=1
+ExecStart=@NODE@ @RABBOT_DIR@/node_modules/tsx/dist/cli.mjs src/bot.ts --agent rabbot
+Restart=always
+RestartSec=5
+StandardOutput=append:@RABBOT_DIR@/logs/bot.log
+StandardError=append:@RABBOT_DIR@/logs/bot.log
+
+[Install]
+WantedBy=default.target

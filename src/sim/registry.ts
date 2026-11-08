@@ -3,8 +3,8 @@
 // simulator runs before the brain or the clones exist, and fails with a
 // clear message only when a table actually asks for one.
 //
-//   rackforge            src/brain/index.ts      createAgent({ params, mode: 'sim', seed, model })
-//   rackforge#<variant>  same, params from opts.variants[<variant>] (A/B tables for the tuner)
+//   rabbot            src/brain/index.ts      createAgent({ params, mode: 'sim', seed, model })
+//   rabbot#<variant>  same, params from opts.variants[<variant>] (A/B tables for the tuner)
 //   starter           src/agents/starter.ts   StarterAgent (word search via the index, see fast-starter.ts)
 //   sim:<Strategy>    engine-driven server sim: Cheapskate | ValueBidder | Aggressive
 //   clone:<botId>     src/memory/clones.ts    createCloneAgent(botId, { seed })
@@ -18,7 +18,7 @@ import { SIM_STRATEGIES, type SimStrategy } from "./engine.js";
 import { FastStarterAgent } from "./fast-starter.js";
 import type { Shuffler } from "./rng.js";
 
-export type SeatKind = "rackforge" | "starter" | "sim" | "clone" | "idle";
+export type SeatKind = "rabbot" | "starter" | "sim" | "clone" | "idle";
 
 export interface SeatSpec {
   /** Canonical spec string; stats are keyed by it. */
@@ -46,13 +46,13 @@ export const SIM_POOL: readonly { botId: number; name: string; strategy: SimStra
 export const SYNTHETIC_ID_BASE = 1_000_000;
 
 const SPEC_HELP =
-  "use rackforge, rackforge#<variant>, starter, sim:Cheapskate|ValueBidder|Aggressive, clone:<botId> or idle";
+  "use rabbot, rabbot#<variant>, starter, sim:Cheapskate|ValueBidder|Aggressive, clone:<botId> or idle";
 
 export function parseSeatSpec(raw: string): SeatSpec {
   const s = raw.trim();
-  if (s === "rackforge") return { spec: s, kind: "rackforge" };
-  const variant = /^rackforge#([\w.-]+)$/.exec(s);
-  if (variant) return { spec: s, kind: "rackforge", variant: variant[1] };
+  if (s === "rabbot") return { spec: s, kind: "rabbot" };
+  const variant = /^rabbot#([\w.-]+)$/.exec(s);
+  if (variant) return { spec: s, kind: "rabbot", variant: variant[1] };
   if (s === "starter") return { spec: s, kind: "starter" };
   if (s === "idle") return { spec: s, kind: "idle" };
   const sim = /^sim:(\w+)$/i.exec(s);
@@ -138,11 +138,11 @@ export function padWithSims(plans: SeatPlan[], rng: Shuffler, maxSize = LOBBY_MA
 export type Params = Record<string, unknown>;
 
 export interface AgentOptions {
-  /** Params for plain 'rackforge' seats. */
+  /** Params for plain 'rabbot' seats. */
   params?: Params;
-  /** Params for 'rackforge#<name>' seats. */
+  /** Params for 'rabbot#<name>' seats. */
   variants?: Record<string, Params>;
-  /** Load the opponent model for rackforge seats: true (default path), a db path, or false. */
+  /** Load the opponent model for rabbot seats: true (default path), a db path, or false. */
   model?: boolean | string;
 }
 
@@ -178,11 +178,11 @@ export async function loadRegistry(specs: readonly SeatSpec[], opts: AgentOption
   const warnings: string[] = [];
   const kinds = new Set(specs.map((s) => s.kind));
 
-  let createRackForge: ((o: object) => Agent) | undefined;
+  let createRABBOT: ((o: object) => Agent) | undefined;
   let model: unknown;
-  if (kinds.has("rackforge")) {
+  if (kinds.has("rabbot")) {
     const brain = await importIfPresent("../brain/index.js");
-    createRackForge = need(brain, "src/brain/index.ts", "createAgent", "seat 'rackforge'") as (o: object) => Agent;
+    createRABBOT = need(brain, "src/brain/index.ts", "createAgent", "seat 'rabbot'") as (o: object) => Agent;
     if (opts.model !== false) {
       try {
         const mod = await importIfPresent("../memory/model.js");
@@ -221,9 +221,9 @@ export async function loadRegistry(specs: readonly SeatSpec[], opts: AgentOption
           return undefined;
         case "starter":
           return new FastStarterAgent();
-        case "rackforge": {
+        case "rabbot": {
           const params = spec.variant !== undefined ? opts.variants![spec.variant] : opts.params;
-          return createRackForge!({ params, mode: "sim", seed, model });
+          return createRABBOT!({ params, mode: "sim", seed, model });
         }
         case "clone":
           return createClone!(spec.cloneBotId!, { seed });

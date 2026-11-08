@@ -1,10 +1,10 @@
-# RackForge backend (SpacetimeDB)
+# RABBOT backend (SpacetimeDB)
 
-Everything stateful RackForge keeps lives in its own SpacetimeDB database `rackforge`,
-on a dedicated local SpacetimeDB server (`rackforge-stdb.service`, 127.0.0.1:3013). That
+Everything stateful RABBOT keeps lives in its own SpacetimeDB database `rabbot`,
+on a dedicated local SpacetimeDB server (`rabbot-stdb.service`, 127.0.0.1:3013). That
 covers the mirrored public game history, the facts derived from it, the
 module-maintained sums, the fitted bid models, and the live bot's telemetry.
-RackForge only reads ScrabbleBot's `scrabblebot` database on maincloud and never
+RABBOT only reads ScrabbleBot's `scrabblebot` database on maincloud and never
 calls reducers there. The server runs with its own port, data dir and JWT
 keys, separate from any other SpacetimeDB instance on the host.
 
@@ -18,23 +18,23 @@ keys, separate from any other SpacetimeDB instance on the host.
 | `src/backend_bindings/` | Generated TypeScript client bindings. Don't edit; regenerate. |
 | `src/backend/client.ts` | Node client: `connectBackend`, batch writers, `putDerived`, `sql`, `createEventSink`. |
 | `src/backend/import-sqlite.ts` | One-shot SQLite → backend migration, also the real-data benchmark. |
-| `src/backend/backend.test.ts` | Live tests against a throwaway `rackforge-test-<pid>` database. |
+| `src/backend/backend.test.ts` | Live tests against a throwaway `rabbot-test-<pid>` database. |
 | `src/backend/testdb.ts` | Test harness: publish, allow-list, delete. |
 | `src/backend/mint-writer.ts` | Mints a writer identity and saves its token. |
 | `src/backend/mirror-sync.ts` | `MirrorSync`: the miner's SQLite working copy → backend, by diff (see "Miner"). |
-| `src/backend/telemetry.ts` | `Telemetry`: the live bot's decision log → `rackforge_event` + typed tables + heartbeat. |
+| `src/backend/telemetry.ts` | `Telemetry`: the live bot's decision log → `rabbot_event` + typed tables + heartbeat. |
 | `src/backend/model-source.ts` | Opponent model data from the backend (`loadOpponentModel("stdb:")`). |
 | `src/backend/check-mirror.ts` | Mirror lag vs maincloud, row counts vs the miner's SQLite. |
 | `src/backend/model-compare.ts` | Backend-loaded vs SQLite-loaded opponent model, timed. |
-| `deploy/rackforge-miner.service` | The miner (`mine.ts --follow --db data/miner.sqlite`), Nice=10, logs to `logs/miner.log`. |
-| `deploy/rackforge-stdb.service` | Server unit. Runs the pinned v2.13.0 `spacetimedb-standalone` directly. |
-| `~/.local/share/rackforge/stdb/` | Server data dir (commitlog, snapshots). |
-| `~/.local/share/rackforge/keys/id_ecdsa{,.pub}` | The server's own JWT keys, not the global `~/.config/spacetime` keys. |
-| `~/.config/rackforge/local.toml` | CLI config: server `rackforge` (default) + the owner login (server-issued identity). |
-| `~/.config/rackforge/writer.token` | Token of the allow-listed writer identity RackForge's Node processes use (mode 600; `RACKFORGE_WRITER_TOKEN_PATH` overrides). |
+| `deploy/rabbot-miner.service` | The miner (`mine.ts --follow --db data/miner.sqlite`), Nice=10, logs to `logs/miner.log`. |
+| `deploy/rabbot-stdb.service` | Server unit. Runs the pinned v2.13.0 `spacetimedb-standalone` directly. |
+| `~/.local/share/rabbot/stdb/` | Server data dir (commitlog, snapshots). |
+| `~/.local/share/rabbot/keys/id_ecdsa{,.pub}` | The server's own JWT keys, not the global `~/.config/spacetime` keys. |
+| `~/.config/rabbot/local.toml` | CLI config: server `rabbot` (default) + the owner login (server-issued identity). |
+| `~/.config/rabbot/writer.token` | Token of the allow-listed writer identity RABBOT's Node processes use (mode 600; `RABBOT_WRITER_TOKEN_PATH` overrides). |
 
-The CLI rewrites its config files with mode 664. `~/.config/rackforge` has mode
-700, so they stay private, but re-run `chmod 600 ~/.config/rackforge/*.toml` after
+The CLI rewrites its config files with mode 664. `~/.config/rabbot` has mode
+700, so they stay private, but re-run `chmod 600 ~/.config/rabbot/*.toml` after
 a CLI write anyway.
 
 ## Operating it
@@ -44,59 +44,59 @@ Always pass `--config-path`. Never run a bare `spacetime login` or
 SpacetimeDB projects on the host may rely on.
 
 ```sh
-S=~/.local/bin/spacetime; C=~/.config/rackforge/local.toml
+S=~/.local/bin/spacetime; C=~/.config/rabbot/local.toml
 
 # Server (with `loginctl enable-linger` it starts at boot without a login session)
-systemctl --user status rackforge-stdb        # start | stop | restart likewise
-journalctl --user -u rackforge-stdb -f
+systemctl --user status rabbot-stdb        # start | stop | restart likewise
+journalctl --user -u rabbot-stdb -f
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3013/v1/ping   # 200
 
 # Publish the module. Keeps data; only additive changes (new tables, new
 # columns appended with .default()). Anything else: --delete-data=always,
 # then re-add the writer and reload the data (import-sqlite / miner).
 cd backend && npm install
-$S --config-path $C publish -s rackforge -p . -y rackforge
+$S --config-path $C publish -s rabbot -p . -y rabbot
 $S --config-path $C generate --lang typescript --out-dir ../src/backend_bindings -p . -y
 
 # Look at data / logs (the owner also sees the private `writer` table)
-$S --config-path $C sql -s rackforge rackforge "SELECT COUNT(*) AS n FROM g_auction"
-$S --config-path $C logs -s rackforge rackforge
+$S --config-path $C sql -s rabbot rabbot "SELECT COUNT(*) AS n FROM g_auction"
+$S --config-path $C logs -s rabbot rabbot
 
 # Writers (owner only)
 cd .. && npx tsx src/backend/mint-writer.ts [--out <path>] [--force]
-$S --config-path $C call -s rackforge rackforge add_writer '{"__identity__":"0x<hex>"}' '"label"'
-$S --config-path $C call -s rackforge rackforge remove_writer '{"__identity__":"0x<hex>"}'
+$S --config-path $C call -s rabbot rabbot add_writer '{"__identity__":"0x<hex>"}' '"label"'
+$S --config-path $C call -s rabbot rabbot remove_writer '{"__identity__":"0x<hex>"}'
 
 # Recompute the sums from d_* (owner only)
-$S --config-path $C call -s rackforge rackforge rebuild_stats
+$S --config-path $C call -s rabbot rabbot rebuild_stats
 
 # Integration tests (opt-in) and the real-data import benchmark, both on
 # throwaway databases
-RACKFORGE_IT=1 node --import tsx --test src/backend/backend.test.ts
+RABBOT_IT=1 node --import tsx --test src/backend/backend.test.ts
 NODE_OPTIONS=--max-old-space-size=12000 npx tsx src/backend/import-sqlite.ts
-# The real migration of data/history.sqlite into rackforge (idempotent; re-runnable)
-NODE_OPTIONS=--max-old-space-size=12000 npx tsx src/backend/import-sqlite.ts --db rackforge
+# The real migration of data/history.sqlite into rabbot (idempotent; re-runnable)
+NODE_OPTIONS=--max-old-space-size=12000 npx tsx src/backend/import-sqlite.ts --db rabbot
 ```
 
 A database is loaded (its commitlog replayed) on the first request after a
 server start. With the full history (3.7M rows) that takes ~20 s, until
-SpacetimeDB writes a snapshot. The unit's `ExecStartPost` touches `rackforge`, so
-`systemctl start` returns only once `rackforge` answers, and the client waits up
+SpacetimeDB writes a snapshot. The unit's `ExecStartPost` touches `rabbot`, so
+`systemctl start` returns only once `rabbot` answers, and the client waits up
 to 60 s to connect.
 
 Disk: a deleted database's replica dir stays under `stdb/replicas/`. That is
 ~9 MB per test run and ~700 MB per throwaway import run. A killed test run
-can also leave its `rackforge-test-<pid>` database behind (`$S --config-path $C
-list`, then `delete -s rackforge -y <name>`).
+can also leave its `rabbot-test-<pid>` database behind (`$S --config-path $C
+list`, then `delete -s rabbot -y <name>`).
 
-## Miner (rackforge-miner.service)
+## Miner (rabbot-miner.service)
 
 `src/memory/mine.ts --follow` mirrors maincloud's public tables
 (anonymous) into its SQLite working copy (`data/miner.sqlite`, started as
 a copy of `data/history.sqlite`, which stays frozen for offline tools),
 derives `d_*` rows there and refits bid models hourly in a niced child
 process. `MirrorSync` (every 3 s, `--sync-every`) pushes every difference
-to `rackforge`: per-match rows of each match whose `match_mined` stamp differs
+to `rabbot`: per-match rows of each match whose `match_mined` stamp differs
 from `g_match_mined`, plus every running match (live auctions reach the
 backend within ~1-4 s); derived rows of each match whose `derived_us`
 differs from `d_match_info.derived_at`; bid models whose `fitted_us`
@@ -105,16 +105,16 @@ differs; the small base tables whole; state-table deletes (every 60 s);
 outage or a failed pass is repaired by the next pass. `--no-backend` turns
 it off.
 
-The rackforge database holds the full mirror; `data/miner.sqlite` is the
+The rabbot database holds the full mirror; `data/miner.sqlite` is the
 miner's local working cache (subscription target, input of derive and the
 hourly refit, and the opponent-model file the bot reads via
-`RACKFORGE_MODEL_DB`). In a consistency check every `g_*`, `d_*` and `bid_model` count equals the
+`RABBOT_MODEL_DB`). In a consistency check every `g_*`, `d_*` and `bid_model` count equals the
 SQLite copy (478,332 `g_auction`, 2,821,660 `d_bid_obs`, ...), and the
 backend's newest `auction_id` stayed 7-32 auctions (~1-3 s at ~10 live
 matches) behind maincloud over 10 checks 30 s apart.
 
 ```sh
-systemctl --user status rackforge-miner        # restart | stop likewise
+systemctl --user status rabbot-miner        # restart | stop likewise
 tail -f logs/miner.log
 npx tsx src/backend/check-mirror.ts --sqlite data/miner.sqlite   # counts + lag
 npx tsx src/backend/check-mirror.ts --watch 20                   # lag vs maincloud
@@ -123,23 +123,23 @@ npx tsx src/backend/check-mirror.ts --watch 20                   # lag vs maincl
 ## Live telemetry
 
 `src/live/session.ts` creates a `Telemetry` (live runs only;
-`RACKFORGE_TELEMETRY=0` turns it off, `RACKFORGE_TELEMETRY=force` also in a dry run)
-and taps `DecisionLog.write`: every record goes to `rackforge_event`, and
-`auction` → `rackforge_decision`, `word` → `rackforge_word`, `match_end` → `rackforge_match`,
+`RABBOT_TELEMETRY=0` turns it off, `RABBOT_TELEMETRY=force` also in a dry run)
+and taps `DecisionLog.write`: every record goes to `rabbot_event`, and
+`auction` → `rabbot_decision`, `word` → `rabbot_word`, `match_end` → `rabbot_match`,
 plus a `heartbeat` every 10 s. `record()` is synchronous and never throws;
 typed writes are sent only on an open connection, at most 64 in flight;
 the event queue is capped at 50,000 records; the sink reconnects with
 backoff when the server is down. The JSONL file is still written first.
 `npx tsx src/monitor/status.ts` reads it all back (rating, rank, last 10
 matches, misses, think times, style vs the top 10, and the tournament:
-the newest unfinished one, whether RackForge is registered, its standing in the
+the newest unfinished one, whether RABBOT is registered, its standing in the
 server's order (Swiss points, total score, lower bot id), Swiss points,
 its tournament matches, and in the final its running score difference).
 
 For a bot that doesn't use session.ts's wiring, the one-line hook is
 `attachTelemetry` (src/backend/telemetry.ts): it taps the `DecisionLog`,
 heartbeats every 10 s from a status callback, never throws or blocks, and
-returns a no-op handle with `RACKFORGE_TELEMETRY=0`:
+returns a no-op handle with `RABBOT_TELEMETRY=0`:
 
 ```ts
 import { attachTelemetry } from "../backend/telemetry.js";
@@ -153,13 +153,13 @@ monitor empty.
 
 ## Opponent model from the backend
 
-`loadOpponentModel("stdb:")` (or `RACKFORGE_MODEL_SOURCE=backend` for the
+`loadOpponentModel("stdb:")` (or `RABBOT_MODEL_SOURCE=backend` for the
 no-argument call) copies `g_bot`, `g_bot_version`, `g_bot_stats`,
 `bid_model`, `d_match_info`, `d_match_seat`, `d_auction_ctx`, `d_play_obs`
 into an in-memory SQLite and runs the unchanged model on it. Not the
 default: it loads in ~3.3 s (vs ~0.25 s), skips `d_bid_obs` so it never
 refits stale bots at load or on `refresh()`, and botSummary's bid counts
-read 0. `RACKFORGE_MODEL_DB=<path>` points the default at another SQLite file
+read 0. `RABBOT_MODEL_DB=<path>` points the default at another SQLite file
 (e.g. the miner's fresh `data/miner.sqlite`).
 
 Measured with `model-compare.ts`: backend load 3.5 s
@@ -167,7 +167,7 @@ Measured with `model-compare.ts`: backend load 3.5 s
 115 of 3000 samples, all on 4 bots the SQLite path refits at load (stale
 fits), max mean diff 3.05; marketPrice max diff 4 over 130 cells. Not the
 same predictions, and it would make the bot's start depend on
-rackforge-stdb, so the default stays SQLite.
+rabbot-stdb, so the default stays SQLite.
 
 ## Auth
 
@@ -243,11 +243,11 @@ deleted.
 | Table | Columns |
 |---|---|
 | `bid_model` | `bot_id` pk (0 = market), `fitted_at`, `data_at`, `n_obs`, `params` (model.ts JSON, ≤ 256 kB) |
-| `rackforge_event` | `id` autoInc pk, `at` idx (client time), `type` idx, `match_id?` idx, `auction_id?`, `json`. Each row is one `logs/decisions-*.jsonl` record, losslessly (≤ 64 kB). |
-| `rackforge_decision` | `auction_id` pk, `match_id` idx, `round`, `letter`, `balance`, `quick_bid`, `quick_ms`, `refined_bid?`, `refine_ms?`, `budget_ms`, `sent_bid`, `min_slack_ms`, `misses`, `refused`, `value_estimate?`, `won?`, `paid?`, `winner_bot_id?`, `reason`, `at`. `at` is the server time of the first log; a later log updates the row and keeps it. |
-| `rackforge_word` | `id` autoInc pk, `match_id` idx, `round`, `word`, `reward`, `rack_before`, `think_ms`, `ack_ms?`, `ok`, `err?`, `at` |
-| `rackforge_match` | `match_id` pk, `place?`, `seats`, `score?`, `balance?`, `coins_spent`, `auctions_won`, `auctions`, `words`, `word_points`, `unplayed_tiles`, `winner_score?`, `rating_after?`, `agent`, `started_at?`, `ended_at` |
-| `rackforge_status` | singleton `id` = 0: `heartbeat_at` (server time), `state`, `current_match?`, `latency_ms`, `clock_offset_ms`, `version`, `rating?`, `rank?` |
+| `rabbot_event` | `id` autoInc pk, `at` idx (client time), `type` idx, `match_id?` idx, `auction_id?`, `json`. Each row is one `logs/decisions-*.jsonl` record, losslessly (≤ 64 kB). |
+| `rabbot_decision` | `auction_id` pk, `match_id` idx, `round`, `letter`, `balance`, `quick_bid`, `quick_ms`, `refined_bid?`, `refine_ms?`, `budget_ms`, `sent_bid`, `min_slack_ms`, `misses`, `refused`, `value_estimate?`, `won?`, `paid?`, `winner_bot_id?`, `reason`, `at`. `at` is the server time of the first log; a later log updates the row and keeps it. |
+| `rabbot_word` | `id` autoInc pk, `match_id` idx, `round`, `word`, `reward`, `rack_before`, `think_ms`, `ack_ms?`, `ok`, `err?`, `at` |
+| `rabbot_match` | `match_id` pk, `place?`, `seats`, `score?`, `balance?`, `coins_spent`, `auctions_won`, `auctions`, `words`, `word_points`, `unplayed_tiles`, `winner_score?`, `rating_after?`, `agent`, `started_at?`, `ended_at` |
+| `rabbot_status` | singleton `id` = 0: `heartbeat_at` (server time), `state`, `current_match?`, `latency_ms`, `clock_offset_ms`, `version`, `rating?`, `rank?` |
 | `meta` | `key` pk, `value` (≤ 1 MB), `updated_at` |
 | `writer` (private) | `identity` pk, `role`, `label`, `added_at`, `added_by?` |
 
@@ -262,7 +262,7 @@ deleted.
 | `rebuild_stats` † | none | Recomputes all three sum tables from `d_*`. |
 | `put_bid_models` | `rows` (≤ 1,000) | Upsert by `bot_id`. |
 | `delete_bid_models` | `bot_ids` | An empty list deletes all. |
-| `log_events` | `rows` (≤ 2,000) | Appends to `rackforge_event`. |
+| `log_events` | `rows` (≤ 2,000) | Appends to `rabbot_event`. |
 | `prune_events` | `before` | Deletes up to 50,000 older events per call. |
 | `log_decision`, `log_word`, `log_match`, `heartbeat` | the row's fields | |
 | `set_meta`, `delete_meta` | `key`, `value` | |
@@ -305,5 +305,5 @@ see "Miner" for current counts).
 | Subscribe all 382k `g_auction` | 1.0 s |
 | Subscribe every sum table, model and bot | 29 ms |
 | `market_stat` vs a recount from the SQLite rows | identical, 130 keys |
-| Restart | all counts and sums identical; full-history database answers after ~20 s (commitlog replay), small `rackforge` in ~1 s |
+| Restart | all counts and sums identical; full-history database answers after ~20 s (commitlog replay), small `rabbot` in ~1 s |
 | Largest reducer message | 24 MB accepted; 32 MB drops the connection. The client caps calls at 4 MB. |

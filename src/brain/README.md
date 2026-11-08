@@ -1,6 +1,6 @@
-# RackForge decision engine
+# RABBOT decision engine
 
-`createAgent()` returns `RackForgeAgent`. Use the strategy ID `rackforge` in the
+`createAgent()` returns `RABBOTAgent`. Use the strategy ID `rabbot` in the
 live launcher and simulator. Parameters resolve from defaults, `data/params.json`,
 and explicit overrides.
 
@@ -13,6 +13,6 @@ Simulation mode uses seeded sampling. Live mode uses bounded refinement time so
 bids arrive before auction deadlines. The Windows launcher disables telemetry and
 lobby entry while waiting for tournaments.
 
-Run `npm test` for offline checks. Run `npm run sim -- --table rackforge,starter --pad`
+Run `npm test` for offline checks. Run `npm run sim -- --table rabbot,starter --pad`
 for a simulation. Use `npm run mine -- --recent 1000 --no-backend` to refresh a
 limited public-history model snapshot.

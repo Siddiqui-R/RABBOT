@@ -1,5 +1,5 @@
 // Live bot telemetry: record projections (pure), resilience with no server,
-// and a round trip into a throwaway `rackforge-test-<pid>` database.
+// and a round trip into a throwaway `rabbot-test-<pid>` database.
 //   node --import tsx --test src/backend/telemetry.test.ts
 
 import assert from "node:assert/strict";
@@ -23,11 +23,11 @@ const WORD = { match: 14541, round: 68, rackBefore: "AAEILRTVW", word: "AIRWAVE"
 const END = {
   match: 14541, me: 127, status: "Ended", place: 4, seats: 6, score: 87, balance: 51, coinsSpent: 136,
   auctionsWon: 11, auctions: 68, words: ["JUNIPER", "AIRWAVE"], wordPoints: 87, unplayedTiles: 2,
-  standings: [{ botId: 74, score: 105, place: 1 }, { botId: 127, score: 87, place: 4 }], agent: "rackforge",
+  standings: [{ botId: 74, score: 105, place: 1 }, { botId: 127, score: 87, place: 4 }], agent: "rabbot",
 };
 
 describe("projections", () => {
-  test("auction -> rackforge_decision", () => {
+  test("auction -> rabbot_decision", () => {
     const d = decisionFrom(AUCTION)!;
     assert.equal(d.auctionId, 773421n);
     assert.equal(d.matchId, 14551n);
@@ -112,9 +112,9 @@ describe("attachTelemetry (no server)", () => {
     assert.equal(beats, b);
   });
 
-  test("RACKFORGE_TELEMETRY=0 gives a no-op handle", async () => {
-    const prev = process.env.RACKFORGE_TELEMETRY;
-    process.env.RACKFORGE_TELEMETRY = "0";
+  test("RABBOT_TELEMETRY=0 gives a no-op handle", async () => {
+    const prev = process.env.RABBOT_TELEMETRY;
+    process.env.RABBOT_TELEMETRY = "0";
     try {
       let tapped = false;
       const h = attachTelemetry({ setTap: () => void (tapped = true), warn: () => {} });
@@ -122,13 +122,13 @@ describe("attachTelemetry (no server)", () => {
       assert.equal(tapped, false);
       await h.close();
     } finally {
-      if (prev === undefined) delete process.env.RACKFORGE_TELEMETRY;
-      else process.env.RACKFORGE_TELEMETRY = prev;
+      if (prev === undefined) delete process.env.RABBOT_TELEMETRY;
+      else process.env.RABBOT_TELEMETRY = prev;
     }
   });
 });
 
-const skip = (await serverUp()) ? false : "integration test: set RACKFORGE_IT=1 with the local rackforge server (127.0.0.1:3013) and a writer token";
+const skip = (await serverUp()) ? false : "integration test: set RABBOT_IT=1 with the local rabbot server (127.0.0.1:3013) and a writer token";
 
 describe("round trip", { skip }, () => {
   let writer: Backend;
@@ -141,10 +141,10 @@ describe("round trip", { skip }, () => {
     deleteTestDb();
   });
 
-  test("records land in rackforge_event and the typed tables", async () => {
+  test("records land in rabbot_event and the typed tables", async () => {
     const t = new Telemetry({ db: TEST_DB, flushMs: 100 });
     const q = (s: string) => sql(s, { db: TEST_DB });
-    t.record("start", { agent: "rackforge" });
+    t.record("start", { agent: "rabbot" });
     // The sink connects on its first flush; typed writes need the connection.
     for (let i = 0; i < 100 && !t.sink.backend(); i++) await new Promise((r) => setTimeout(r, 50));
     assert.ok(t.sink.backend(), "sink connected");
@@ -153,11 +153,11 @@ describe("round trip", { skip }, () => {
     t.record("auction", AUCTION);
     t.record("word", WORD);
     t.record("match_end", END);
-    t.heartbeat({ state: "match", currentMatch: 14541n, latencyMs: 80, clockOffsetMs: 99, version: "rackforge@test" });
+    t.heartbeat({ state: "match", currentMatch: 14541n, latencyMs: 80, clockOffsetMs: 99, version: "rabbot@test" });
     let rt = -1;
     for (let i = 0; i < 100; i++) {
       const [d, w, m, s] = await Promise.all([
-        q("SELECT * FROM rackforge_decision"), q("SELECT * FROM rackforge_word"), q("SELECT * FROM rackforge_match"), q("SELECT * FROM rackforge_status"),
+        q("SELECT * FROM rabbot_decision"), q("SELECT * FROM rabbot_word"), q("SELECT * FROM rabbot_match"), q("SELECT * FROM rabbot_status"),
       ]);
       if (d.length && w.length && m.length && s.length) {
         rt = performance.now() - t0;
@@ -171,7 +171,7 @@ describe("round trip", { skip }, () => {
     }
     assert.ok(rt >= 0, "typed rows arrived");
     await t.close();
-    const ev = await q("SELECT * FROM rackforge_event");
+    const ev = await q("SELECT * FROM rabbot_event");
     assert.deepEqual(new Set(ev.map((e) => e.type)), new Set(["start", "match_start", "auction", "word", "match_end"]));
     const auction = ev.find((e) => e.type === "auction")!;
     assert.equal(Number(auction.auction_id), 773421);

@@ -1,5 +1,5 @@
-// MirrorSync (miner SQLite -> backend) against a throwaway `rackforge-test-<pid>`
-// database on the local rackforge server.
+// MirrorSync (miner SQLite -> backend) against a throwaway `rabbot-test-<pid>`
+// database on the local rabbot server.
 //   node --import tsx --test src/backend/mirror-sync.test.ts
 
 import assert from "node:assert/strict";
@@ -12,7 +12,7 @@ import { sql, type Backend } from "./client.js";
 import { MirrorSync } from "./mirror-sync.js";
 import { connectTestWriter, deleteTestDb, publishTestDb, serverUp, TEST_DB } from "./testdb.js";
 
-const skip = (await serverUp()) ? false : "integration test: set RACKFORGE_IT=1 with the local rackforge server (127.0.0.1:3013) and a writer token";
+const skip = (await serverUp()) ? false : "integration test: set RABBOT_IT=1 with the local rabbot server (127.0.0.1:3013) and a writer token";
 
 describe("mirror sync", { skip }, () => {
   let writer: Backend;

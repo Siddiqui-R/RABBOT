@@ -23,7 +23,7 @@ import spacetimedb, {
   gTournamentEntry,
   gTournamentMatch,
   gWord,
-  rackforgeMatch,
+  rabbotMatch,
   wordFields,
   type DAuctionCtx,
   type DBidObs,
@@ -522,9 +522,9 @@ export const deleteBidModels = spacetimedb.reducer({ botIds: t.array(t.u64()) },
   for (const id of ids) tb.botId.delete(id);
 });
 
-// ---------- RackForge telemetry (live bot, monitor) ----------
+// ---------- RABBOT telemetry (live bot, monitor) ----------
 
-const eventIn = t.row("RACKFORGEEventIn", {
+const eventIn = t.row("RABBOTEventIn", {
   at: t.timestamp(),
   type: t.string(),
   matchId: t.option(t.u64()),
@@ -538,7 +538,7 @@ export const logEvents = spacetimedb.reducer({ rows: t.array(eventIn) }, (ctx, {
   for (const r of rows) {
     checkText("type", r.type, 64);
     checkText("json", r.json, MAX_JSON);
-    ctx.db.rackforgeEvent.insert({
+    ctx.db.rabbotEvent.insert({
       id: 0n,
       at: r.at,
       type: r.type,
@@ -554,7 +554,7 @@ export const logEvents = spacetimedb.reducer({ rows: t.array(eventIn) }, (ctx, {
 // without deleting (the count is in the module log).
 export const pruneEvents = spacetimedb.reducer({ before: t.timestamp() }, (ctx, { before }) => {
   requireWriter(ctx);
-  const tb = ctx.db.rackforgeEvent;
+  const tb = ctx.db.rabbotEvent;
   const ids: bigint[] = [];
   for (const r of tb.eventByAt.filter(new Range<Timestamp>({ tag: "unbounded" }, { tag: "excluded", value: before }))) {
     ids.push(r.id);
@@ -568,7 +568,7 @@ export const logDecision = spacetimedb.reducer(decisionFields, (ctx, args) => {
   requireWriter(ctx);
   checkLetter(args.letter);
   checkText("reason", args.reason);
-  const tb = ctx.db.rackforgeDecision;
+  const tb = ctx.db.rabbotDecision;
   const old = tb.auctionId.find(args.auctionId);
   // Option args arrive as optional properties; rows need them present.
   const row = {
@@ -591,14 +591,14 @@ export const logWord = spacetimedb.reducer(wordFields, (ctx, args) => {
   checkText("word", args.word, 64);
   checkText("rackBefore", args.rackBefore, 128);
   if (args.err !== undefined) checkText("err", args.err);
-  ctx.db.rackforgeWord.insert({ id: 0n, ...args, ackMs: args.ackMs, err: args.err, at: ctx.timestamp });
+  ctx.db.rabbotWord.insert({ id: 0n, ...args, ackMs: args.ackMs, err: args.err, at: ctx.timestamp });
 });
 
-export const logMatch = spacetimedb.reducer({ row: rackforgeMatch.rowType }, (ctx, { row }) => {
+export const logMatch = spacetimedb.reducer({ row: rabbotMatch.rowType }, (ctx, { row }) => {
   requireWriter(ctx);
   checkText("words", row.words, 4_000);
   checkText("agent", row.agent, 200);
-  const tb = ctx.db.rackforgeMatch;
+  const tb = ctx.db.rabbotMatch;
   upsert(tb.matchId, (x) => tb.insert(x), row.matchId, row);
 });
 
@@ -616,7 +616,7 @@ export const heartbeat = spacetimedb.reducer(
     requireWriter(ctx);
     checkText("state", args.state, 200);
     checkText("version", args.version, 200);
-    const tb = ctx.db.rackforgeStatus;
+    const tb = ctx.db.rabbotStatus;
     const row = {
       ...args,
       id: 0,

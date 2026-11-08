@@ -1,4 +1,4 @@
-// Keeps RackForge's SpacetimeDB backend (`rackforge`) in step with the miner's SQLite
+// Keeps RABBOT's SpacetimeDB backend (`rabbot`) in step with the miner's SQLite
 // working copy. The miner (src/memory/mine.ts) still writes SQLite first
 // (its proven code path, and derive.ts/train.ts work on SQLite); this module
 // pushes every difference to the backend:
@@ -202,7 +202,7 @@ export class MirrorSync {
           if (this.b === x) this.b = undefined;
           this.log(`backend sync: ${why}`);
         });
-        this.log("backend sync: connected to rackforge");
+        this.log("backend sync: connected to rabbot");
         return x;
       })
       .catch((e) => {

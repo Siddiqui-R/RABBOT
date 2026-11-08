@@ -30,7 +30,7 @@ test("styleOf: per-match tiles, price, word length, 7+ words over the most recen
   assert.equal(none.price, 0);
 });
 
-test("tournamentView: picks the open tournament, server standing order, RackForge's matches and final difference", async () => {
+test("tournamentView: picks the open tournament, server standing order, RABBOT's matches and final difference", async () => {
   const { tournamentView } = await import("./status.js");
   const tour = (id: number, status: string) => ({
     id, status, swissRoundsTotal: 3, currentRound: 2, topCut: 2, matchSize: 6, auctionType: "Vickrey", createdUs: id, endedUs: null, winnerBotId: null,
@@ -51,7 +51,7 @@ test("tournamentView: picks the open tournament, server standing order, RackForg
     { matchId: 60, botId: 13, score: 100 }, { matchId: 60, botId: 5, score: 80 },
     { matchId: 61, botId: 13, score: 70 }, { matchId: 61, botId: 5, score: 75 },
   ];
-  const v = tournamentView(tours, entries, tms, parts, new Set([50, 60]), 13, new Map([[13, "RackForge"]]))!;
+  const v = tournamentView(tours, entries, tms, parts, new Set([50, 60]), 13, new Map([[13, "RABBOT"]]))!;
   assert.equal(v.tournament.id, 2);
   assert.equal(v.active, true);
   assert.deepEqual(v.standings.map((e) => e.botId), [13, 4, 5, 8]); // points, then total, then lower id

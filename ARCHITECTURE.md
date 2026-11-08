@@ -1,4 +1,4 @@
-# RackForge architecture
+# RABBOT architecture
 
 The Node.js client connects to ScrabbleBot through generated SpacetimeDB bindings.
 It subscribes to public match events and its private rack, submits sealed bids,
@@ -13,5 +13,5 @@ playable words and partitions racks into scoring words.
 models. `src/sim` provides offline simulation and evaluation. The optional local
 telemetry backend is disabled by the Windows launcher.
 
-Settings use the `RACKFORGE_` prefix. `BOT_NAME`, `BOT_TOKEN`, `BOT_NONCE`,
+Settings use the `RABBOT_` prefix. `BOT_NAME`, `BOT_TOKEN`, `BOT_NONCE`,
 `TOURNAMENT_ID`, `STDB_HOST`, and `STDB_DB` select credentials and connection details.

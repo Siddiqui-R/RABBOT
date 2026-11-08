@@ -1,10 +1,10 @@
 // One-shot migration of the miner's SQLite history (data/history.sqlite,
-// opened read-only) into RackForge's SpacetimeDB backend, and the real-data
+// opened read-only) into RABBOT's SpacetimeDB backend, and the real-data
 // benchmark for it.
 //
-//   tsx src/backend/import-sqlite.ts                 throwaway rackforge-import-<pid>, measured, deleted
+//   tsx src/backend/import-sqlite.ts                 throwaway rabbot-import-<pid>, measured, deleted
 //   tsx src/backend/import-sqlite.ts --keep          ... and keep it
-//   tsx src/backend/import-sqlite.ts --db rackforge        the real migration (keeps data; idempotent)
+//   tsx src/backend/import-sqlite.ts --db rabbot        the real migration (keeps data; idempotent)
 //   flags: --sqlite <path>
 //
 // Prints rows/s per table, server RSS, and checks the module's market_stat
@@ -33,9 +33,9 @@ const flag = (f: string) => {
 const sqlitePath = flag("--sqlite") ?? join(import.meta.dirname, "..", "..", "data", "history.sqlite");
 const target = flag("--db");
 const throwaway = target === undefined;
-// The test harness refuses the real `rackforge` name on purpose, so it is only
+// The test harness refuses the real `rabbot` name on purpose, so it is only
 // loaded for a throwaway run; the real migration needs none of it.
-if (throwaway) process.env.RACKFORGE_TEST_DB ??= `rackforge-import-${process.pid}`;
+if (throwaway) process.env.RABBOT_TEST_DB ??= `rabbot-import-${process.pid}`;
 const harness = throwaway ? await import("./testdb.js") : undefined;
 const DB = target ?? harness!.TEST_DB;
 const keep = args.includes("--keep") || !throwaway;
@@ -53,7 +53,7 @@ const bool = (v: V): boolean => Number(v) === 1;
 
 function serverRssMb(): number {
   try {
-    const pid = execFileSync("systemctl", ["--user", "show", "-p", "MainPID", "--value", "rackforge-stdb.service"], {
+    const pid = execFileSync("systemctl", ["--user", "show", "-p", "MainPID", "--value", "rabbot-stdb.service"], {
       encoding: "utf8",
     }).trim();
     return Number(/VmRSS:\s+(\d+)/.exec(readFileSync(`/proc/${pid}/status`, "utf8"))?.[1] ?? 0) / 1024;
@@ -224,7 +224,7 @@ for (const g of got) {
 if (bad || got.length !== want.size) throw new Error(`market_stat mismatch: ${bad} bad of ${got.length}, want ${want.size} keys`);
 console.log(`market_stat matches the SQLite recount (${got.length} keys)`);
 
-// Every table's row count against its SQLite source. On the real rackforge the
+// Every table's row count against its SQLite source. On the real rabbot the
 // backend may already hold more (the miner kept going), so only fewer is a
 // failure there; a fresh throwaway must match exactly.
 const PAIRS: [sqlite: string, backend: string][] = [

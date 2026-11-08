@@ -5,12 +5,12 @@
 //
 // Flags: --db <path>  --chunk <matches per subscription>  --no-derive  --no-fit
 //        --rederive (rebuild all derived rows)  --fit-every <minutes> (follow mode)
-//        --no-backend (don't mirror into RackForge's SpacetimeDB backend)
+//        --no-backend (don't mirror into RABBOT's SpacetimeDB backend)
 //        --sync-every <seconds> (backend sync period, default 3)
 //
 // SQLite is the miner's working copy; src/backend/mirror-sync.ts pushes
-// every difference (mirror rows, derived rows, bid models) to the `rackforge`
-// database on the local rackforge-stdb server, which is RackForge's store of record.
+// every difference (mirror rows, derived rows, bid models) to the `rabbot`
+// database on the local rabbot-stdb server, which is RABBOT's store of record.
 // The backend being down never stops the miner; the next sync repairs it.
 //
 // Anonymous, read-only: no token, no reducer calls, and only NAMED public

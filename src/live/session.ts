@@ -68,7 +68,7 @@ export interface SessionOptions {
   testDisconnectS?: number;
   /** Feed watchdog: silence (ms) mid-match that forces a reconnect; undefined = 5 auctions / 6 s, 0 = off. */
   stallMs?: number;
-  /** Register for every tournament that opens (default on; RACKFORGE_AUTO_TOURNAMENT=0 in bot.ts turns it off). */
+  /** Register for every tournament that opens (default on; RABBOT_AUTO_TOURNAMENT=0 in bot.ts turns it off). */
   autoTournament?: boolean;
 }
 
@@ -113,7 +113,7 @@ export class Session {
   private startedAt = Date.now();
   private matchesEnded = 0;
   private claimed = false;
-  /** RackForge backend telemetry (live runs; RACKFORGE_TELEMETRY=0 turns it off). */
+  /** RABBOT backend telemetry (live runs; RABBOT_TELEMETRY=0 turns it off). */
   private telemetry: Telemetry | null = null;
   /** Registration attempts per tournament id (auto or TOURNAMENT_ID). */
   private reg = new Map<bigint, { attempts: number; nextAt: number; inFlight: boolean; done: boolean }>();
@@ -213,9 +213,9 @@ export class Session {
   }
 
   private startTelemetry() {
-    // Dry runs stay out of RackForge's telemetry unless forced (tests point
-    // RACKFORGE_STDB_DB at a throwaway database and set RACKFORGE_TELEMETRY=force).
-    const env = process.env.RACKFORGE_TELEMETRY;
+    // Dry runs stay out of RABBOT's telemetry unless forced (tests point
+    // RABBOT_STDB_DB at a throwaway database and set RABBOT_TELEMETRY=force).
+    const env = process.env.RABBOT_TELEMETRY;
     if (env === "0" || (this.o.dryRun && env !== "force")) return;
     try {
       const t = new Telemetry({ onError: (m) => this.o.log.warn(m) });
@@ -234,7 +234,7 @@ export class Session {
       currentMatch: this.current ?? undefined,
       latencyMs: c.rttP50 ?? 0,
       clockOffsetMs: c.offsetMs ?? 0,
-      version: `${this.o.agentLabel}${process.env.RACKFORGE_VERSION ? `@${process.env.RACKFORGE_VERSION}` : ""}`.slice(0, 64),
+      version: `${this.o.agentLabel}${process.env.RABBOT_VERSION ? `@${process.env.RABBOT_VERSION}` : ""}`.slice(0, 64),
     });
   }
 
@@ -816,15 +816,15 @@ export class Session {
   private async maybeJoinLobby(reason: string) {
     const conn = this.conn;
     if (this.o.dryRun || !conn || !this.ready || this.stopping || this.current !== null || this.joining) return;
-    // Tournament-only mode (RACKFORGE_NO_LADDER): ladder matches publish our bids and words for rivals to model.
+    // Tournament-only mode (RABBOT_NO_LADDER): ladder matches publish our bids and words for rivals to model.
     // Tournament matches need no lobby: the server seats entrants directly.
-    if (process.env.RACKFORGE_NO_LADDER === "1") {
-      if (!this.stealthLogged) this.o.log.human("stealth: RACKFORGE_NO_LADDER=1, not joining the ladder (tournaments only)");
+    if (process.env.RABBOT_NO_LADDER === "1") {
+      if (!this.stealthLogged) this.o.log.human("stealth: RABBOT_NO_LADDER=1, not joining the ladder (tournaments only)");
       this.stealthLogged = true;
       return;
     }
     if (this.heldForTournament()) {
-      if (!this.heldLogged) this.o.log.human("RackForge is in a tournament under way: waiting to be seated, not joining the lobby");
+      if (!this.heldLogged) this.o.log.human("RABBOT is in a tournament under way: waiting to be seated, not joining the lobby");
       this.heldLogged = true;
       return;
     }
@@ -855,7 +855,7 @@ export class Session {
 
   /**
    * Register for TOURNAMENT_ID and (auto mode) every tournament taking
-   * registrations that RackForge is not entered in. One call at a time per
+   * registrations that RABBOT is not entered in. One call at a time per
    * tournament, retried with backoff while refused; never unregisters.
    */
   private registerTournaments() {
@@ -873,7 +873,7 @@ export class Session {
       if (entered) {
         if (st && !st.done) {
           st.done = true;
-          this.o.log.human(`RackForge is entered in tournament ${id} (${t?.status.tag ?? "?"})`);
+          this.o.log.human(`RABBOT is entered in tournament ${id} (${t?.status.tag ?? "?"})`);
         }
         continue;
       }
@@ -883,7 +883,7 @@ export class Session {
       if (!st) {
         st = { attempts: 0, nextAt: 0, inFlight: false, done: false };
         this.reg.set(id, st);
-        this.o.log.human(`!! TOURNAMENT ${id} is open for registration: registering RackForge`);
+        this.o.log.human(`!! TOURNAMENT ${id} is open for registration: registering RABBOT`);
       }
       if (st.inFlight || st.done || now < st.nextAt) continue;
       void this.registerTournament(conn, id, st);
@@ -897,7 +897,7 @@ export class Session {
       await conn.reducers.registerForTournament({ tournamentId: id });
       st.done = true;
       this.o.log.write("tournament", { action: "register", tournament: id, ok: true, attempt: st.attempts, auto: id !== this.o.tournamentId });
-      this.o.log.human(`!! REGISTERED RackForge for tournament ${id} (attempt ${st.attempts})`);
+      this.o.log.human(`!! REGISTERED RABBOT for tournament ${id} (attempt ${st.attempts})`);
     } catch (e) {
       const wait = registerBackoffMs(st.attempts);
       st.nextAt = Date.now() + wait;

@@ -56,7 +56,7 @@ export function buildReport(dbPath: string = DEFAULT_DB_PATH): string {
     )!;
 
     out.push(
-      "# RackForge field report",
+      "# RABBOT field report",
       "",
       `Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC. Data: ${num(span.n)} ended matches, ${fmtUs(num(span.a))} to ${fmtUs(asOf)} UTC.`,
       "",

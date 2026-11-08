@@ -33,26 +33,26 @@ async function main() {
   const words: number[] = [];
   const samples: number[] = [];
   for (let g = 0; g < games; g++) {
-    const rackforge = createAgent({ params, mode: "live", seed: g, model: env.model });
+    const rabbot = createAgent({ params, mode: "live", seed: g, model: env.model });
     const timed: Agent = {
-      name: "rackforge",
+      name: "rabbot",
       quickBid(v: MatchView, a: AuctionView) {
         const t = performance.now();
-        const r = rackforge.quickBid(v, a);
+        const r = rabbot.quickBid(v, a);
         quick.push(performance.now() - t);
         return r;
       },
       refineBid(v: MatchView, a: AuctionView, b: number) {
         const t = performance.now();
-        const r = rackforge.refineBid!(v, a, b);
+        const r = rabbot.refineBid!(v, a, b);
         over.push(performance.now() - t - b);
-        const tr = (rackforge as { lastTrace?: { samples: number } }).lastTrace;
+        const tr = (rabbot as { lastTrace?: { samples: number } }).lastTrace;
         if (tr) samples.push(tr.samples);
         return r;
       },
       chooseWords(v: MatchView) {
         const t = performance.now();
-        const r = rackforge.chooseWords(v);
+        const r = rabbot.chooseWords(v);
         words.push(performance.now() - t);
         return r;
       },

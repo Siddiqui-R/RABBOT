@@ -1,4 +1,4 @@
-// Does the opponent model loaded from RackForge's backend ("stdb:") answer like
+// Does the opponent model loaded from RABBOT's backend ("stdb:") answer like
 // the one loaded from the miner's SQLite copy? Times the backend load and
 // compares predictBid / marketPrice / playHabits / botSummary on a sample.
 //

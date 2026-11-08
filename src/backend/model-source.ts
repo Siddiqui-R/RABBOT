@@ -1,4 +1,4 @@
-// The opponent model's data, loaded from RackForge's backend instead of the
+// The opponent model's data, loaded from RABBOT's backend instead of the
 // miner's SQLite file: the tables model.ts reads are copied (synchronously,
 // over the backend's SQL endpoint) into an in-memory SQLite database with
 // the miner's schema, so the model's queries run unchanged.

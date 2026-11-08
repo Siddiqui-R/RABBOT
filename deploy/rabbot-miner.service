@@ -1,0 +1,20 @@
+# RABBOT history miner (systemd user unit template): mirrors maincloud's public
+# scrabblebot tables (anonymous, read-only) into data/miner.sqlite, derives
+# observations, refits bid models hourly and pushes everything to the local
+# rabbot backend. Replace @RABBOT_DIR@ and @NODE@ as in rabbot-bot.service.
+[Unit]
+Description=RABBOT history miner (maincloud scrabblebot -> SQLite working copy -> rabbot SpacetimeDB backend)
+After=network-online.target rabbot-stdb.service
+Wants=rabbot-stdb.service
+
+[Service]
+WorkingDirectory=@RABBOT_DIR@
+ExecStart=@NODE@ @RABBOT_DIR@/node_modules/tsx/dist/cli.mjs src/memory/mine.ts --follow --db data/miner.sqlite
+Restart=always
+RestartSec=10
+Nice=10
+StandardOutput=append:@RABBOT_DIR@/logs/miner.log
+StandardError=append:@RABBOT_DIR@/logs/miner.log
+
+[Install]
+WantedBy=default.target

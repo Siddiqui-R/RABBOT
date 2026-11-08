@@ -13,8 +13,8 @@ export type SeatDef =
   | { kind: "sim"; botId: number; strategy: SimStrategy }
   | { kind: "clone"; botId: number }
   | { kind: "starter"; botId: number }
-  /** The 'rackforge' agent with the default parameters (defaults + data/params.json). */
-  | { kind: "rackforge"; botId: number }
+  /** The 'rabbot' agent with the default parameters (defaults + data/params.json). */
+  | { kind: "rabbot"; botId: number }
   | { kind: "test"; botId: number };
 
 export interface Job {
@@ -23,9 +23,9 @@ export interface Job {
   deal: number;
   seed: number;
   seats: SeatDef[];
-  /** Agent in the test seat: 'starter', or a rackforge variant name. */
+  /** Agent in the test seat: 'starter', or a rabbot variant name. */
   agent: string;
-  /** 'rackforge' params for the test seat; overrides looking `agent` up in the variants. */
+  /** 'rabbot' params for the test seat; overrides looking `agent` up in the variants. */
   params?: Record<string, unknown>;
   auctionType?: "Vickrey" | "FirstPrice";
 }
@@ -93,7 +93,7 @@ export function runJob(env: Env, job: Job): JobResult {
         return { botId: s.botId, isSim: true, strategy: s.strategy };
       case "starter":
         return { botId: s.botId, isSim: false, agent: new StarterAgent() };
-      case "rackforge":
+      case "rabbot":
         return { botId: s.botId, isSim: false, agent: createAgent({ mode: "sim", seed, model: env.model }) };
       case "clone": {
         if (!env.createClone) throw new Error("clone seats need src/memory/clones.ts");

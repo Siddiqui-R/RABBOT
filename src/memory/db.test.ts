@@ -8,7 +8,7 @@ import { deriveAll, KIND_EQ, KIND_LE } from "./derive.js";
 import { loadOpponentModel } from "./model.js";
 
 function tmpDb(): { db: Db; file: string } {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "rackforge-"));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "rabbot-"));
   const file = path.join(dir, "h.sqlite");
   return { db: openDb(file), file };
 }
@@ -136,7 +136,7 @@ test("derive replays balances, racks and what each sealed bid is known to be", (
 });
 
 test("model degrades gracefully without a database", () => {
-  const m = loadOpponentModel(path.join(os.tmpdir(), "does-not-exist-rackforge.sqlite"));
+  const m = loadOpponentModel(path.join(os.tmpdir(), "does-not-exist-rabbot.sqlite"));
   assert.equal(m.strategyOf(1), "unknown");
   const d = m.predictBid(1, "E", { phase: 0.2, balance: 30 });
   assert.equal(d.source, "market");

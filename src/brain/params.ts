@@ -220,8 +220,8 @@ export function sanitize(raw: unknown): Partial<Params> {
   return out as Partial<Params>;
 }
 
-/** RACKFORGE_PARAMS='{"liveCompute":4}' in the environment (testing a flag in a dry run); bad JSON is ignored. */
-export function envOverrides(raw = process.env.RACKFORGE_PARAMS): Partial<Params> {
+/** RABBOT_PARAMS='{"liveCompute":4}' in the environment (testing a flag in a dry run); bad JSON is ignored. */
+export function envOverrides(raw = process.env.RABBOT_PARAMS): Partial<Params> {
   if (!raw) return {};
   try {
     return sanitize(JSON.parse(raw));
@@ -230,7 +230,7 @@ export function envOverrides(raw = process.env.RACKFORGE_PARAMS): Partial<Params
   }
 }
 
-/** Defaults, then data/params.json, then $RACKFORGE_PARAMS, then `overrides`. */
+/** Defaults, then data/params.json, then $RABBOT_PARAMS, then `overrides`. */
 export function resolveParams(overrides: Partial<Params> | Record<string, unknown> = {}): Params {
   return { ...DEFAULT_PARAMS, ...fileOverrides(), ...envOverrides(), ...sanitize(overrides) };
 }

@@ -9,7 +9,7 @@ import { errMsg } from "./log.js";
 
 export interface LoadedAgent {
   agent: Agent;
-  /** What was asked for and what we got, e.g. rackforge -> starter. */
+  /** What was asked for and what we got, e.g. rabbot -> starter. */
   requested: string;
   fallback: boolean;
   notes: string[];
@@ -71,7 +71,7 @@ export async function loadAgent(name: string, mode: "live" | "sim" = "live", see
     }
   }
 
-  if (name !== "rackforge") return fallback(`unknown agent '${name}'`);
+  if (name !== "rabbot") return fallback(`unknown agent '${name}'`);
 
   let model: unknown;
   try {
@@ -92,6 +92,6 @@ export async function loadAgent(name: string, mode: "live" | "sim" = "live", see
     const agent = create({ mode, seed, ...(model !== undefined ? { model } : {}) });
     return { agent, requested: name, fallback: false, notes };
   } catch (e) {
-    return fallback(`rackforge agent failed to load: ${errMsg(e)}`);
+    return fallback(`rabbot agent failed to load: ${errMsg(e)}`);
   }
 }

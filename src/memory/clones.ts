@@ -201,7 +201,7 @@ export interface CloneOptions {
   model?: OpponentModel;
   /** Overrides data/clones.json (calibration passes candidate params here). */
   params?: Partial<CloneParams>;
-  /** Override data/clones.json floorQ / phaseTilt / bidShift (else env RACKFORGE_CLONE_FLOORQ / _TILT / _SHIFT, for scans). */
+  /** Override data/clones.json floorQ / phaseTilt / bidShift (else env RABBOT_CLONE_FLOORQ / _TILT / _SHIFT, for scans). */
   floorQ?: number;
   phaseTilt?: number;
   bidShift?: number;
@@ -221,12 +221,12 @@ export function createCloneAgent(botId: number, opts: CloneOptions = {}): Agent 
   const uHold = rng();
   const dumpN = Math.floor(p.dumpAt + rng());
   const classMul = [p.vowelLog, 0, p.midLog, p.highLog];
-  const envFloor = Number(process.env.RACKFORGE_CLONE_FLOORQ);
-  const floorQ = Math.max(0, Math.min(0.95, opts.floorQ ?? (Number.isFinite(envFloor) && process.env.RACKFORGE_CLONE_FLOORQ ? envFloor : (loadClonesFile()?.floorQ ?? 0))));
-  const envTilt = Number(process.env.RACKFORGE_CLONE_TILT);
-  const tilt = opts.phaseTilt ?? (Number.isFinite(envTilt) && process.env.RACKFORGE_CLONE_TILT ? envTilt : (loadClonesFile()?.phaseTilt ?? 0));
-  const envShift = Number(process.env.RACKFORGE_CLONE_SHIFT);
-  const shift = opts.bidShift ?? (Number.isFinite(envShift) && process.env.RACKFORGE_CLONE_SHIFT ? envShift : (loadClonesFile()?.bidShift ?? 0));
+  const envFloor = Number(process.env.RABBOT_CLONE_FLOORQ);
+  const floorQ = Math.max(0, Math.min(0.95, opts.floorQ ?? (Number.isFinite(envFloor) && process.env.RABBOT_CLONE_FLOORQ ? envFloor : (loadClonesFile()?.floorQ ?? 0))));
+  const envTilt = Number(process.env.RABBOT_CLONE_TILT);
+  const tilt = opts.phaseTilt ?? (Number.isFinite(envTilt) && process.env.RABBOT_CLONE_TILT ? envTilt : (loadClonesFile()?.phaseTilt ?? 0));
+  const envShift = Number(process.env.RABBOT_CLONE_SHIFT);
+  const shift = opts.bidShift ?? (Number.isFinite(envShift) && process.env.RABBOT_CLONE_SHIFT ? envShift : (loadClonesFile()?.bidShift ?? 0));
   let rackKey = "";
   let rackReward = 0;
 

@@ -1,33 +1,33 @@
 #!/usr/bin/env bash
-# Run RackForge (bot + miner) around the clock in tmux, as an alternative to the
+# Run RABBOT (bot + miner) around the clock in tmux, as an alternative to the
 # systemd units in deploy/.
 #
-#   scripts/rackforge.sh start      tmux session 'rackforge': window 'bot' and window 'miner'
-#   scripts/rackforge.sh stop       graceful stop (SIGINT to both), then close the session
-#   scripts/rackforge.sh restart
-#   scripts/rackforge.sh status     what's running + npm run status
-#   scripts/rackforge.sh logs [bot|miner|decisions]   follow a log
-#   scripts/rackforge.sh attach     tmux attach -t rackforge
+#   scripts/rabbot.sh start      tmux session 'rabbot': window 'bot' and window 'miner'
+#   scripts/rabbot.sh stop       graceful stop (SIGINT to both), then close the session
+#   scripts/rabbot.sh restart
+#   scripts/rabbot.sh status     what's running + npm run status
+#   scripts/rabbot.sh logs [bot|miner|decisions]   follow a log
+#   scripts/rabbot.sh attach     tmux attach -t rabbot
 #
 # Each window runs a restart loop with exponential backoff (2 s doubling to
 # 5 min; reset after a run that lasted 10+ minutes). The bot exiting with 78
 # means bad or missing credentials: the loop stops instead of hammering.
 #
-# Env passed through to the bot (RACKFORGE_* are named after the strategy's
-# internal id, 'rackforge'): BOT_NAME BOT_TOKEN BOT_NONCE TOURNAMENT_ID
-# STDB_HOST STDB_DB RACKFORGE_MARGIN_MS RACKFORGE_LOG_DIR RACKFORGE_BOT_NAME, plus
-# RACKFORGE_BOT_ARGS (extra flags for npm run bot, e.g. "--agent starter") and
-# RACKFORGE_MINER_ARGS (default "--follow"). They go through a mode-600 file
-# (logs/.rackforge-env) that each restart sources, never through a command
+# Env passed through to the bot (RABBOT_* are named after the strategy's
+# internal id, 'rabbot'): BOT_NAME BOT_TOKEN BOT_NONCE TOURNAMENT_ID
+# STDB_HOST STDB_DB RABBOT_MARGIN_MS RABBOT_LOG_DIR RABBOT_BOT_NAME, plus
+# RABBOT_BOT_ARGS (extra flags for npm run bot, e.g. "--agent starter") and
+# RABBOT_MINER_ARGS (default "--follow"). They go through a mode-600 file
+# (logs/.rabbot-env) that each restart sources, never through a command
 # line, so a token can't show up in `ps`.
 
 set -u
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SESSION=rackforge
-LOGS="${RACKFORGE_LOG_DIR:-$ROOT/logs}"
-STOP_FILE="$LOGS/.rackforge-stop"
-ENV_FILE="$LOGS/.rackforge-env"
-PASS_VARS=(BOT_NAME BOT_TOKEN BOT_NONCE TOURNAMENT_ID STDB_HOST STDB_DB RACKFORGE_MARGIN_MS RACKFORGE_LOG_DIR RACKFORGE_BOT_NAME RACKFORGE_BOT_ARGS RACKFORGE_MINER_ARGS)
+SESSION=rabbot
+LOGS="${RABBOT_LOG_DIR:-$ROOT/logs}"
+STOP_FILE="$LOGS/.rabbot-stop"
+ENV_FILE="$LOGS/.rabbot-env"
+PASS_VARS=(BOT_NAME BOT_TOKEN BOT_NONCE TOURNAMENT_ID STDB_HOST STDB_DB RABBOT_MARGIN_MS RABBOT_LOG_DIR RABBOT_BOT_NAME RABBOT_BOT_ARGS RABBOT_MINER_ARGS)
 
 mkdir -p "$LOGS"
 
@@ -59,7 +59,7 @@ loop() {
     echo "=== $(date -u +%FT%TZ) $name exited with $rc" | tee -a "$log"
     [ -e "$STOP_FILE" ] && break
     if [ "$name" = bot ] && [ "$rc" -eq 78 ]; then
-      echo "=== $name: credentials missing or rejected; not restarting (fix BOT_TOKEN/BOT_NONCE, then: scripts/rackforge.sh restart)" | tee -a "$log"
+      echo "=== $name: credentials missing or rejected; not restarting (fix BOT_TOKEN/BOT_NONCE, then: scripts/rabbot.sh restart)" | tee -a "$log"
       break
     fi
     if [ $(( $(date +%s) - started )) -ge 600 ]; then delay=2; fi
@@ -75,8 +75,8 @@ cmd_start() {
   if running; then echo "already running (tmux session '$SESSION'); try: $0 status"; return 0; fi
   rm -f "$STOP_FILE"
   write_env
-  tmux new-session -d -s "$SESSION" -n bot -c "$ROOT" "bash '$ROOT/scripts/rackforge.sh' _loop-bot"
-  tmux new-window -t "$SESSION" -n miner -c "$ROOT" "bash '$ROOT/scripts/rackforge.sh' _loop-miner"
+  tmux new-session -d -s "$SESSION" -n bot -c "$ROOT" "bash '$ROOT/scripts/rabbot.sh' _loop-bot"
+  tmux new-window -t "$SESSION" -n miner -c "$ROOT" "bash '$ROOT/scripts/rabbot.sh' _loop-miner"
   echo "started tmux session '$SESSION' (windows: bot, miner). Attach: tmux attach -t $SESSION"
 }
 
@@ -125,11 +125,11 @@ case "${1:-}" in
     # shellcheck disable=SC1090
     [ -f "$ENV_FILE" ] && . "$ENV_FILE"
     # shellcheck disable=SC2086
-    cd "$ROOT" && loop bot npm run --silent bot -- ${RACKFORGE_BOT_ARGS:-} ;;
+    cd "$ROOT" && loop bot npm run --silent bot -- ${RABBOT_BOT_ARGS:-} ;;
   _loop-miner)
     # shellcheck disable=SC1090
     [ -f "$ENV_FILE" ] && . "$ENV_FILE"
     # shellcheck disable=SC2086
-    cd "$ROOT" && loop miner npm run --silent mine -- ${RACKFORGE_MINER_ARGS:---follow} ;;
+    cd "$ROOT" && loop miner npm run --silent mine -- ${RABBOT_MINER_ARGS:---follow} ;;
   *) sed -n '2,23p' "$0"; exit 2 ;;
 esac

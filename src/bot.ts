@@ -1,21 +1,21 @@
-// RackForge live bot.
+// RABBOT live bot.
 //
 //   npm run bot                         play as the bot whose token is in .token-<BOT_NAME>
 //   BOT_TOKEN=<jwt> npm run bot         first run with a token from the team page
 //   BOT_NONCE=<code> npm run bot        first run with a nonce from mint_credential_nonce
 //   TOURNAMENT_ID=<id> npm run bot      also register for that tournament
-//                                       (not needed: RackForge registers for every tournament
-//                                       that opens; RACKFORGE_AUTO_TOURNAMENT=0 turns that off)
+//                                       (not needed: RABBOT registers for every tournament
+//                                       that opens; RABBOT_AUTO_TOURNAMENT=0 turns that off)
 //   npm run bot -- --agent starter      play the official starter strategy
 //   npm run bot -- --dry-run            follow a live match anonymously; no reducer calls
 //
-// Env: BOT_NAME (default rackforge; names the token file only), BOT_TOKEN,
-// BOT_NONCE, TOURNAMENT_ID, STDB_HOST, STDB_DB, RACKFORGE_MARGIN_MS (safety
-// margin, default 250), RACKFORGE_LOG_DIR (default logs), RACKFORGE_AUTO_TOURNAMENT
-// (default 1: auto-register for tournaments), RACKFORGE_TELEMETRY (0 = off),
-// RACKFORGE_STALL_MS (mid-match feed silence that forces a reconnect; default
+// Env: BOT_NAME (default rabbot; names the token file only), BOT_TOKEN,
+// BOT_NONCE, TOURNAMENT_ID, STDB_HOST, STDB_DB, RABBOT_MARGIN_MS (safety
+// margin, default 250), RABBOT_LOG_DIR (default logs), RABBOT_AUTO_TOURNAMENT
+// (default 1: auto-register for tournaments), RABBOT_TELEMETRY (0 = off),
+// RABBOT_STALL_MS (mid-match feed silence that forces a reconnect; default
 // 5 auctions / at least 6 s, 0 = off).
-// Flags: --agent rackforge|starter|clone:<botId>, --dry-run, --as <botId>,
+// Flags: --agent rabbot|starter|clone:<botId>, --dry-run, --as <botId>,
 // --match <matchId>, --matches <n>, --margin <ms>, --max-refine <ms>,
 // --test-disconnect <s> (drop the connection once, to exercise reconnects).
 // Exit codes: 0 done, 2 dry run found nothing to follow, 78 bad credentials.
@@ -45,7 +45,7 @@ interface Args {
 }
 
 function parseArgs(argv: string[]): Args {
-  const a: Args = { agent: "rackforge", dryRun: false };
+  const a: Args = { agent: "rabbot", dryRun: false };
   const next = (i: number, flag: string) => {
     const v = argv[i + 1];
     if (v === undefined) throw new Error(`${flag} needs a value`);
@@ -101,10 +101,10 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   const host = process.env.STDB_HOST ?? "https://maincloud.spacetimedb.com";
   const db = process.env.STDB_DB ?? "scrabblebot";
-  const botName = process.env.BOT_NAME ?? "rackforge";
+  const botName = process.env.BOT_NAME ?? "rabbot";
   const tokenPath = path.join(ROOT, `.token-${botName}`);
-  const logDir = process.env.RACKFORGE_LOG_DIR ?? path.join(ROOT, "logs");
-  const log = new DecisionLog(logDir, args.dryRun ? "dryrun" : "decisions", args.dryRun ? "dry" : "RackForge");
+  const logDir = process.env.RABBOT_LOG_DIR ?? path.join(ROOT, "logs");
+  const log = new DecisionLog(logDir, args.dryRun ? "dryrun" : "decisions", args.dryRun ? "dry" : "RABBOT");
   setGlobalLogLevel("warn");
 
   // A thrown error anywhere must not kill a bot that's mid-match.
@@ -149,10 +149,10 @@ async function main() {
   try {
     tournamentId = process.env.TOURNAMENT_ID?.trim() ? BigInt(process.env.TOURNAMENT_ID.trim()) : undefined;
   } catch {
-    log.warn(`TOURNAMENT_ID '${process.env.TOURNAMENT_ID}' is not a number: ignored (auto-registration still on unless RACKFORGE_AUTO_TOURNAMENT=0)`);
+    log.warn(`TOURNAMENT_ID '${process.env.TOURNAMENT_ID}' is not a number: ignored (auto-registration still on unless RABBOT_AUTO_TOURNAMENT=0)`);
   }
-  const autoTournament = process.env.RACKFORGE_AUTO_TOURNAMENT !== "0";
-  const margin = args.margin ?? (process.env.RACKFORGE_MARGIN_MS ? Number(process.env.RACKFORGE_MARGIN_MS) : undefined);
+  const autoTournament = process.env.RABBOT_AUTO_TOURNAMENT !== "0";
+  const margin = args.margin ?? (process.env.RABBOT_MARGIN_MS ? Number(process.env.RABBOT_MARGIN_MS) : undefined);
   const session = new Session({
     host,
     db,
@@ -161,7 +161,7 @@ async function main() {
     saveToken: (t) => saveToken(tokenPath, t, log),
     tournamentId,
     autoTournament,
-    stallMs: process.env.RACKFORGE_STALL_MS !== undefined && Number.isFinite(Number(process.env.RACKFORGE_STALL_MS)) ? Number(process.env.RACKFORGE_STALL_MS) : undefined,
+    stallMs: process.env.RABBOT_STALL_MS !== undefined && Number.isFinite(Number(process.env.RABBOT_STALL_MS)) ? Number(process.env.RABBOT_STALL_MS) : undefined,
     dryRun: args.dryRun,
     asBotId,
     maxMatches: args.matches ?? (args.dryRun ? 1 : 0),
@@ -225,6 +225,6 @@ function saveToken(p: string, token: string, log: DecisionLog) {
 }
 
 main().catch((e) => {
-  console.error(`[RackForge] fatal: ${errMsg(e)}`);
+  console.error(`[RABBOT] fatal: ${errMsg(e)}`);
   process.exit(1);
 });

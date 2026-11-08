@@ -15,10 +15,10 @@ test("the wordlist is the server's: 172,820 words, sorted, byte-identical when a
   const words = lexWords();
   assert.equal(words.length, 172_820);
   for (let i = 1; i < words.length; i++) assert.ok(words[i - 1]! < words[i]!, `unsorted at ${i}`);
-  // The upstream game module (RACKFORGE_UPSTREAM, default ../scrabblebot/spacetimedb
+  // The upstream game module (RABBOT_UPSTREAM, default ../scrabblebot/spacetimedb
   // next to this repo), if checked out.
   const upstream = path.join(
-    process.env.RACKFORGE_UPSTREAM ? path.resolve(process.env.RACKFORGE_UPSTREAM) : path.join(import.meta.dirname, "..", "..", "..", "scrabblebot", "spacetimedb"),
+    process.env.RABBOT_UPSTREAM ? path.resolve(process.env.RABBOT_UPSTREAM) : path.join(import.meta.dirname, "..", "..", "..", "scrabblebot", "spacetimedb"),
     "wordlist.txt",
   );
   if (fs.existsSync(upstream)) {

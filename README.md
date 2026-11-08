@@ -1,6 +1,6 @@
-# Rabee-RackForge
+# RABBOT
 
-ScrabbleBot entry: bot 343, team 337. Registered for tournament 3.
+ScrabbleBot entry: bot 404, team 398. Registered for tournament 3.
 
 ## Run
 
@@ -11,9 +11,9 @@ powershell -ExecutionPolicy Bypass -File .\Start-Bot.ps1
 ```
 
 The default launcher waits for tournaments. Keep the computer awake and online.
-Run only one process for this bot. Credentials stay in `.token-Rabee-RackForge`.
+Run only one process for this bot. Credentials stay in `.token-RABBOT`.
 
-The launcher sets `BOT_NAME=Rabee-RackForge` and `TOURNAMENT_ID=3`, then runs `npm start`.
+The launcher sets `BOT_NAME=RABBOT` and `TOURNAMENT_ID=3`, then runs `npm start`.
 
 Credentials and the local opponent-history database are not included in this repository.
 For a fresh installation, obtain your own bot token from the ScrabbleBot team page

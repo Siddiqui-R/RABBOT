@@ -199,7 +199,7 @@ test("aggregate reports every requested metric per spec", async () => {
 test("seat specs parse, and bad ones explain themselves", () => {
   assert.deepEqual(parseSeatSpec(" sim:aggressive "), { spec: "sim:Aggressive", kind: "sim", strategy: "Aggressive" });
   assert.deepEqual(parseSeatSpec("clone:42"), { spec: "clone:42", kind: "clone", cloneBotId: 42 });
-  assert.deepEqual(parseSeatSpec("rackforge#b"), { spec: "rackforge#b", kind: "rackforge", variant: "b" });
+  assert.deepEqual(parseSeatSpec("rabbot#b"), { spec: "rabbot#b", kind: "rabbot", variant: "b" });
   assert.throws(() => parseSeatSpec("sim:Greedy"), /unknown sim strategy/);
   assert.throws(() => parseSeatSpec("gpt"), /unknown seat spec 'gpt'/);
   const ids = assignBotIds(parseTable("sim:Cheapskate,sim:Cheapskate,sim:Cheapskate,clone:77,clone:77,starter"));
@@ -215,10 +215,10 @@ test("optional modules load by .js name, and missing ones come back undefined", 
   assert.equal(await importIfPresent("./no-such-module.js"), undefined);
 });
 
-test("rackforge and clone seats load through the factory conventions, or say what's missing", async () => {
+test("rabbot and clone seats load through the factory conventions, or say what's missing", async () => {
   const src = path.join(import.meta.dirname, "..");
   for (const [spec, file, name] of [
-    ["rackforge", "brain/index.ts", "rackforge"],
+    ["rabbot", "brain/index.ts", "rabbot"],
     ["clone:42", "memory/clones.ts", "clone:42"],
   ] as const) {
     const specs = parseTable(spec);

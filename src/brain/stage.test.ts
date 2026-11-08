@@ -7,7 +7,7 @@ import { test } from "node:test";
 import { countsOf } from "../core/rules.js";
 import type { AuctionView, MatchView, TournamentView } from "../core/types.js";
 import { runMatch, type MatchSeat } from "../sim/engine.js";
-import { createAgent, RackForgeAgent } from "./index.js";
+import { createAgent, RABBOTAgent } from "./index.js";
 
 function table(params: Record<string, unknown>, seed: number): MatchSeat[] {
   const mk = () => createAgent({ mode: "sim", seed, params });
@@ -71,7 +71,7 @@ function bigView(seats: number): MatchView {
 const auction: AuctionView = { auctionId: 3, letter: "E", opensAtMs: 0, closesAtMs: 1000 };
 
 function lambdaAt(seats: number, params: Record<string, unknown>): number {
-  const a = createAgent({ mode: "sim", seed: 3, params: { useModel: false, ...params } }) as RackForgeAgent;
+  const a = createAgent({ mode: "sim", seed: 3, params: { useModel: false, ...params } }) as RABBOTAgent;
   a.quickBid(bigView(seats), auction);
   return a.lastTrace!.lambda;
 }

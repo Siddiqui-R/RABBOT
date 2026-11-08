@@ -4,10 +4,10 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
-$env:BOT_NAME = 'Rabee-RackForge'
-$env:RACKFORGE_TELEMETRY = '0'
-$env:RACKFORGE_AUTO_TOURNAMENT = '0'
-$env:RACKFORGE_NO_LADDER = if ($Ladder) { '0' } else { '1' }
+$env:BOT_NAME = 'RABBOT'
+$env:RABBOT_TELEMETRY = '0'
+$env:RABBOT_AUTO_TOURNAMENT = '0'
+$env:RABBOT_NO_LADDER = if ($Ladder) { '0' } else { '1' }
 if ($TournamentId) { $env:TOURNAMENT_ID = $TournamentId }
 if (-not (Test-Path -LiteralPath 'node_modules/tsx')) {
     & npm.cmd ci

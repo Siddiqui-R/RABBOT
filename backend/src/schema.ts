@@ -1,11 +1,11 @@
 import { schema, t, table, type Infer } from "spacetimedb/server";
 
-// RackForge's backend: everything stateful the bot keeps, in one SpacetimeDB.
+// RABBOT's backend: everything stateful the bot keeps, in one SpacetimeDB.
 //   g_*         1:1 mirror of ScrabbleBot's public tables (the miner)
 //   d_*         per-match facts derived from the mirror (derive.ts)
 //   *_stat      sums the module maintains itself as d_* rows change
 //   bid_model   fitted bid models (model.ts); bot 0 is the market
-//   rackforge_*       the live bot's own telemetry and the monitor's status
+//   rabbot_*       the live bot's own telemetry and the monitor's status
 //   meta        small key/value state (miner cursors, validation report)
 // Everything readable is public so a dashboard can subscribe anonymously;
 // every write goes through a reducer that checks the `writer` allow-list.
@@ -529,14 +529,14 @@ export const bidModel = table(
 );
 export type BidModel = Infer<typeof bidModel.rowType>;
 
-// ---------- RackForge telemetry ----------
+// ---------- RABBOT telemetry ----------
 
 // Every live log record (logs/decisions-*.jsonl), losslessly: `type` is the
 // record type ("auction", "word", "match_end", "error", ...), `json` the
-// whole record. The typed rackforge_* tables below are convenience projections.
-export const rackforgeEvent = table(
+// whole record. The typed rabbot_* tables below are convenience projections.
+export const rabbotEvent = table(
   {
-    name: "rackforge_event",
+    name: "rabbot_event",
     public: true,
     indexes: [
       { accessor: "eventByType", algorithm: "btree", columns: ["type"] },
@@ -544,7 +544,7 @@ export const rackforgeEvent = table(
       { accessor: "eventByAt", algorithm: "btree", columns: ["at"] },
     ],
   },
-  t.row("RACKFORGEEvent", {
+  t.row("RABBOTEvent", {
     id: t.u64().primaryKey().autoInc(),
     // Client time of the record (its `t`).
     at: t.timestamp(),
@@ -554,7 +554,7 @@ export const rackforgeEvent = table(
     json: t.string(),
   }),
 );
-export type RACKFORGEEvent = Infer<typeof rackforgeEvent.rowType>;
+export type RABBOTEvent = Infer<typeof rabbotEvent.rowType>;
 
 // The fields of a decision, shared by the table and the log_decision args.
 export const decisionFields = {
@@ -584,21 +584,21 @@ export const decisionFields = {
 
 const { auctionId: _auctionId, ...decisionRest } = decisionFields;
 
-// One row per auction RackForge saw; re-logging the same auction (e.g. to fill
+// One row per auction RABBOT saw; re-logging the same auction (e.g. to fill
 // the outcome after the close) updates it in place and keeps the first `at`.
-export const rackforgeDecision = table(
+export const rabbotDecision = table(
   {
-    name: "rackforge_decision",
+    name: "rabbot_decision",
     public: true,
     indexes: [{ accessor: "decisionByMatch", algorithm: "btree", columns: ["matchId"] }],
   },
-  t.row("RACKFORGEDecision", {
+  t.row("RABBOTDecision", {
     auctionId: t.u64().primaryKey(),
     ...decisionRest,
     at: t.timestamp(),
   }),
 );
-export type RACKFORGEDecision = Infer<typeof rackforgeDecision.rowType>;
+export type RABBOTDecision = Infer<typeof rabbotDecision.rowType>;
 
 export const wordFields = {
   matchId: t.u64(),
@@ -612,25 +612,25 @@ export const wordFields = {
   err: t.option(t.string()),
 };
 
-// Every word RackForge tried, accepted or refused.
-export const rackforgeWord = table(
+// Every word RABBOT tried, accepted or refused.
+export const rabbotWord = table(
   {
-    name: "rackforge_word",
+    name: "rabbot_word",
     public: true,
-    indexes: [{ accessor: "rackforgeWordByMatch", algorithm: "btree", columns: ["matchId"] }],
+    indexes: [{ accessor: "rabbotWordByMatch", algorithm: "btree", columns: ["matchId"] }],
   },
-  t.row("RACKFORGEWord", {
+  t.row("RABBOTWord", {
     id: t.u64().primaryKey().autoInc(),
     ...wordFields,
     at: t.timestamp(),
   }),
 );
-export type RACKFORGEWord = Infer<typeof rackforgeWord.rowType>;
+export type RABBOTWord = Infer<typeof rabbotWord.rowType>;
 
-// One row per match RackForge played (the match_end record).
-export const rackforgeMatch = table(
-  { name: "rackforge_match", public: true },
-  t.row("RACKFORGEMatch", {
+// One row per match RABBOT played (the match_end record).
+export const rabbotMatch = table(
+  { name: "rabbot_match", public: true },
+  t.row("RABBOTMatch", {
     matchId: t.u64().primaryKey(),
     place: t.option(t.u32()),
     seats: t.u32(),
@@ -650,12 +650,12 @@ export const rackforgeMatch = table(
     endedAt: t.timestamp(),
   }),
 );
-export type RACKFORGEMatch = Infer<typeof rackforgeMatch.rowType>;
+export type RABBOTMatch = Infer<typeof rabbotMatch.rowType>;
 
 // Singleton (id = 0): the live bot's heartbeat.
-export const rackforgeStatus = table(
-  { name: "rackforge_status", public: true },
-  t.row("RACKFORGEStatus", {
+export const rabbotStatus = table(
+  { name: "rabbot_status", public: true },
+  t.row("RABBOTStatus", {
     id: t.u32().primaryKey(),
     heartbeatAt: t.timestamp(),
     state: t.string(),
@@ -667,7 +667,7 @@ export const rackforgeStatus = table(
     rank: t.option(t.u32()),
   }),
 );
-export type RACKFORGEStatus = Infer<typeof rackforgeStatus.rowType>;
+export type RABBOTStatus = Infer<typeof rabbotStatus.rowType>;
 
 // Free-form key/value: miner cursors, the validation report, the monitor's
 // last snapshot.
@@ -706,11 +706,11 @@ const spacetimedb = schema({
   oppStat,
   seatStat,
   bidModel,
-  rackforgeEvent,
-  rackforgeDecision,
-  rackforgeWord,
-  rackforgeMatch,
-  rackforgeStatus,
+  rabbotEvent,
+  rabbotDecision,
+  rabbotWord,
+  rabbotMatch,
+  rabbotStatus,
   meta,
 });
 export default spacetimedb;

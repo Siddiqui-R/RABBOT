@@ -11,11 +11,11 @@ import {
 } from "spacetimedb";
 
 import {
-  RACKFORGEEventIn,
+  RABBOTEventIn,
 } from "./types";
 
 export default {
   get rows() {
-    return __t.array(RACKFORGEEventIn);
+    return __t.array(RABBOTEventIn);
   },
 };

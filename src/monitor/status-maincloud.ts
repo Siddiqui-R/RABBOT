@@ -1,7 +1,7 @@
-// How is RackForge doing?
+// How is RABBOT doing?
 //
 //   npx tsx src/monitor/status-maincloud.ts   one snapshot (straight from maincloud + local logs;
-//   src/monitor/status.ts reads RackForge's backend instead)
+//   src/monitor/status.ts reads RABBOT's backend instead)
 //   npm run status -- --watch 30     refresh every 30 s
 //   npm run status -- --json         print the snapshot as JSON
 //
@@ -9,8 +9,8 @@
 // `spacetime sql --anonymous`): rating, +-, provisional, leaderboard rank,
 // matches, wins, rating trend, online or not. Local side (logs/): last 10
 // matches, deadline misses, think times, refusals. Every run also writes
-// logs/status.json. Env: RACKFORGE_BOT_NAME (default 'RackForge'),
-// STDB_HOST, STDB_DB, RACKFORGE_LOG_DIR.
+// logs/status.json. Env: RABBOT_BOT_NAME (default 'RABBOT'),
+// STDB_HOST, STDB_DB, RABBOT_LOG_DIR.
 
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -21,8 +21,8 @@ import { isProvisional, rankOf, skill, spread, type Rated } from "./rating.js";
 const ROOT = path.join(import.meta.dirname, "..", "..");
 const HOST = process.env.STDB_HOST ?? "https://maincloud.spacetimedb.com";
 const DB = process.env.STDB_DB ?? "scrabblebot";
-const NAME = process.env.RACKFORGE_BOT_NAME ?? "RackForge";
-const LOG_DIR = process.env.RACKFORGE_LOG_DIR ?? path.join(ROOT, "logs");
+const NAME = process.env.RABBOT_BOT_NAME ?? "RABBOT";
+const LOG_DIR = process.env.RABBOT_LOG_DIR ?? path.join(ROOT, "logs");
 
 interface ServerStatus {
   found: boolean;
@@ -126,10 +126,10 @@ const sign = (x: number | null | undefined) => (x === null || x === undefined ? 
 
 function render(s: ServerStatus, l: LogStats): string {
   const lines: string[] = [];
-  lines.push(`RackForge status  ${new Date().toISOString()}`);
+  lines.push(`RABBOT status  ${new Date().toISOString()}`);
   lines.push("");
   if (s.error) lines.push(`server: ERROR ${s.error}`);
-  if (!s.found) lines.push(`server: no bot named '${s.name}' yet (set RACKFORGE_BOT_NAME?)`);
+  if (!s.found) lines.push(`server: no bot named '${s.name}' yet (set RABBOT_BOT_NAME?)`);
   else {
     const rank = s.provisional ? "provisional (no rank yet)" : `rank ${s.rank} of ${s.rankedBots} ranked (${s.rankAmongReal} among real bots)`;
     lines.push(`bot      ${s.name} (#${s.botId}, v${s.version})  ${s.online ? "ONLINE" : "offline"}  last seen ${s.lastSeen ?? "-"}`);

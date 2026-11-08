@@ -2,12 +2,12 @@
 // tested without a connection (server: spacetimedb/src/tournament.ts and
 // the tournament reducers in index.ts).
 //
-// - Auto-registration: every tournament in Registration that RackForge has no
+// - Auto-registration: every tournament in Registration that RABBOT has no
 //   entry in gets one register_for_tournament call, retried with backoff
-//   while it is refused. Registration is idempotent on the server. RackForge
+//   while it is refused. Registration is idempotent on the server. RABBOT
 //   never unregisters.
-// - Lobby: once a tournament RackForge is still in has started, join_lobby is
-//   refused until RackForge is knocked out or it ends. A refusal backs the lobby
+// - Lobby: once a tournament RABBOT is still in has started, join_lobby is
+//   refused until RABBOT is knocked out or it ends. A refusal backs the lobby
 //   off instead of retrying every tick.
 // - Final: the brain's context needs the earlier final games' seats, so
 //   the session subscribes to those matches' match_participant rows.
@@ -47,7 +47,7 @@ export function registerBackoffMs(attempt: number): number {
 /** Delay before the next join_lobby after a refusal. */
 export const LOBBY_REFUSED_BACKOFF_MS = 30_000;
 
-/** join_lobby refused because RackForge is held for a tournament under way. */
+/** join_lobby refused because RABBOT is held for a tournament under way. */
 export function isTournamentHold(err: string): boolean {
   return /tournament/i.test(err);
 }

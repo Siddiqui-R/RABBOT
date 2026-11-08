@@ -11,11 +11,11 @@ import {
 } from "spacetimedb";
 
 import {
-  RACKFORGEMatch,
+  RABBOTMatch,
 } from "./types";
 
 export default {
   get row() {
-    return RACKFORGEMatch;
+    return RABBOTMatch;
   },
 };

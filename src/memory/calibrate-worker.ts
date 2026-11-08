@@ -18,7 +18,7 @@ try {
   getWordEngine();
   cloneModel();
   const brain = (await import("../brain/index.js")) as { createAgent?: (o: object) => Agent };
-  env.createRackForge = brain.createAgent;
+  env.createRABBOT = brain.createAgent;
   port.on("message", (m: { type: "run"; id: number; jobs: MatchJob[] }) => {
     try {
       port.postMessage({ type: "done", id: m.id, stats: m.jobs.map((j) => playJob(env, j)) });

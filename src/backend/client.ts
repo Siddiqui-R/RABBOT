@@ -1,10 +1,10 @@
-// Node client for RackForge's own SpacetimeDB backend (database `rackforge` on the
-// local rackforge-stdb server, 127.0.0.1:3013). Imports only the generated
+// Node client for RABBOT's own SpacetimeDB backend (database `rabbot` on the
+// local rabbot-stdb server, 127.0.0.1:3013). Imports only the generated
 // bindings, the SDK and node built-ins, so it stays stable while the rest
 // of the bot changes around it.
 //
 // Writes go through reducers that check an allow-list, so a process must
-// connect with the writer token (~/.config/rackforge/writer.token) to write;
+// connect with the writer token (~/.config/rabbot/writer.token) to write;
 // any connection can read the public tables.
 //
 // Reading: small or hot tables via `subscribe*` (rows land in `conn.db`,
@@ -37,20 +37,20 @@ import type {
   GTournamentEntry,
   GTournamentMatch,
   GWord,
-  RACKFORGEMatch,
+  RABBOTMatch,
 } from "../backend_bindings/types.js";
 
 export type {
   BidModel, DAuctionCtx, DBidObs, DMatchInfo, DMatchSeat, DPlayObs, GAuction, GBot, GBotStats,
   GBotVersion, GMatch, GMatchMined, GParticipant, GRating, GRetiredBotStats, GTopBid, GTournament,
-  GTournamentEntry, GTournamentMatch, GWord, RACKFORGEMatch,
+  GTournamentEntry, GTournamentMatch, GWord, RABBOTMatch,
 };
 export { DbConnection, Timestamp, type SubscriptionHandle };
 
-export const DEFAULT_URI = process.env.RACKFORGE_STDB_URI ?? "http://127.0.0.1:3013";
-export const DEFAULT_DB = process.env.RACKFORGE_STDB_DB ?? "rackforge";
+export const DEFAULT_URI = process.env.RABBOT_STDB_URI ?? "http://127.0.0.1:3013";
+export const DEFAULT_DB = process.env.RABBOT_STDB_DB ?? "rabbot";
 export const WRITER_TOKEN_PATH =
-  process.env.RACKFORGE_WRITER_TOKEN_PATH ?? join(homedir(), ".config", "rackforge", "writer.token");
+  process.env.RABBOT_WRITER_TOKEN_PATH ?? join(homedir(), ".config", "rabbot", "writer.token");
 
 /** SQL names of every public table, for `subscribeTables`. */
 export const TABLES = [
@@ -59,7 +59,7 @@ export const TABLES = [
   "g_tournament_match", "g_match_mined",
   "d_match_info", "d_match_seat", "d_auction_ctx", "d_bid_obs", "d_play_obs",
   "market_stat", "opp_stat", "seat_stat", "bid_model",
-  "rackforge_event", "rackforge_decision", "rackforge_word", "rackforge_match", "rackforge_status", "meta",
+  "rabbot_event", "rabbot_decision", "rabbot_word", "rabbot_match", "rabbot_status", "meta",
 ] as const;
 export type TableName = (typeof TABLES)[number];
 
@@ -124,7 +124,7 @@ export interface DerivedMatch {
   plays: DPlayObs[];
 }
 
-/** A live log record (logs/decisions-*.jsonl line) for rackforge_event. */
+/** A live log record (logs/decisions-*.jsonl line) for rabbot_event. */
 export interface EventIn {
   at: Timestamp;
   type: string;
@@ -222,7 +222,7 @@ export interface Backend {
   pruneEvents(before: Timestamp): Promise<void>;
   logDecision(d: DecisionLog): Promise<void>;
   logWord(w: WordLog): Promise<void>;
-  logMatch(m: RACKFORGEMatch): Promise<void>;
+  logMatch(m: RABBOTMatch): Promise<void>;
   heartbeat(h: Heartbeat): Promise<void>;
   setMeta(key: string, value: string): Promise<void>;
   deleteMeta(key: string): Promise<void>;
@@ -578,7 +578,7 @@ const asId = (v: unknown): bigint | undefined =>
   typeof v === "bigint" ? v : typeof v === "number" && Number.isSafeInteger(v) && v >= 0 ? BigInt(v) : undefined;
 
 /**
- * Buffers live log records into rackforge_event in the background, so a backend
+ * Buffers live log records into rabbot_event in the background, so a backend
  * hiccup can never delay a bid or crash the bot: pushes are sync and
  * O(1), flushes run on a timer, failures reconnect with backoff and keep
  * the queue (bounded). Records' `match`/`auction` fields fill the indexed

@@ -1,10 +1,10 @@
-// Evaluates RackForge in the faithful simulator, paired by deal:
+// Evaluates RABBOT in the faithful simulator, paired by deal:
 // every deal is played once per agent under test, in the same seat, with the
 // same opponents and the same seed, so per-deal differences cancel most of
 // the luck of the draw.
 //
 //   npx tsx src/brain/eval.ts [--settings sims,starters,field] [--deals 300]
-//     [--agents rackforge,starter] [--ablations] [--variant NAME=JSON]...
+//     [--agents rabbot,starter] [--ablations] [--variant NAME=JSON]...
 //     [--workers 18] [--seed 1] [--matches 400] [--first-price] [--no-model]
 //     [--budget MS] [--json FILE] [--md FILE]
 //
@@ -13,12 +13,12 @@
 //   starters  me + 5 copies of the official starter bot
 //   field     me + the other 5 seats of a recent real match, each a clone of
 //             the real bot that sat there (sims exact); the seat I take is
-//             the one my own bot (RackForge) held, else a random real seat.
+//             the one my own bot (RABBOT) held, else a random real seat.
 //             --match-offset N skips the newest N matches (held-out tables).
 //   top       me + 5 clones drawn from the 12 best-rated active real bots.
-//   rackforges   me + 5 copies of rackforge (a much stronger field than today's).
+//   rabbots   me + 5 copies of rabbot (a much stronger field than today's).
 //   table     me + the fixed seats of --table SPECS (clone:<id>, sim:<Strategy>,
-//             starter, rackforge), e.g. --table clone:59,clone:22,clone:67,clone:60,clone:120.
+//             starter, rabbot), e.g. --table clone:59,clone:22,clone:67,clone:60,clone:120.
 
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -79,7 +79,7 @@ function parseArgs(argv: string[]): Args {
   const a: Args = {
     settings: ["sims", "starters", "field"],
     deals: 200,
-    agents: ["rackforge", "starter"],
+    agents: ["rabbot", "starter"],
     variants: {},
     workers: 18,
     seed: 1,
@@ -123,10 +123,10 @@ function parseArgs(argv: string[]): Args {
         throw new Error(`unknown flag ${k}`);
     }
   }
-  a.variants.rackforge ??= {};
+  a.variants.rabbot ??= {};
   if (ablations) {
     for (const [name, p] of Object.entries(ABLATIONS)) {
-      a.variants[name] = { ...a.variants.rackforge, ...p };
+      a.variants[name] = { ...a.variants.rabbot, ...p };
       if (!a.agents.includes(name)) a.agents.push(name);
     }
   }
@@ -195,7 +195,7 @@ export interface JobSpec {
   table?: string;
 }
 
-/** 'clone:59,sim:Aggressive,starter,rackforge' -> seats (my own seat excluded). */
+/** 'clone:59,sim:Aggressive,starter,rabbot' -> seats (my own seat excluded). */
 export function parseTableSeats(spec: string): SeatDef[] {
   const seats = spec
     .split(",")
@@ -210,7 +210,7 @@ export function parseTableSeats(spec: string): SeatDef[] {
         return { kind: "sim", botId: (s?.botId ?? 1) + 10 * i, strategy: sim[1] as SimStrategy };
       }
       if (x === "starter") return { kind: "starter", botId: TEST_ID + 1 + i };
-      if (x === "rackforge") return { kind: "rackforge", botId: TEST_ID + 1 + i };
+      if (x === "rabbot") return { kind: "rabbot", botId: TEST_ID + 1 + i };
       throw new Error(`unknown --table seat '${x}'`);
     });
   if (seats.length < 1 || seats.length > 5) throw new Error("--table needs 1-5 seats");
@@ -234,8 +234,8 @@ export function buildJobs(args: JobSpec, field: SeatDef[][], top: number[] = [])
         seats = pool.slice(0, 5).map((s): SeatDef => ({ kind: "sim", botId: s.botId, strategy: s.strategy }));
       } else if (setting === "starters") {
         seats = [1, 2, 3, 4, 5].map((k): SeatDef => ({ kind: "starter", botId: TEST_ID + k }));
-      } else if (setting === "rackforges") {
-        seats = [1, 2, 3, 4, 5].map((k): SeatDef => ({ kind: "rackforge", botId: TEST_ID + k }));
+      } else if (setting === "rabbots") {
+        seats = [1, 2, 3, 4, 5].map((k): SeatDef => ({ kind: "rabbot", botId: TEST_ID + k }));
       } else if (setting === "field") {
         if (field.length === 0) throw new Error("no field tables (is data/history.sqlite mined?)");
         const table = field[deal % field.length]!;
@@ -309,7 +309,7 @@ export function report(results: JobResult[], agents: string[], settings: string[
     const deals = new Set(rs.map((r) => r.deal)).size;
     lines.push(`### ${setting} (${deals} deals)`, "");
     lines.push(
-      "| agent | mean place | win rate | score | others' score | coins left | tiles left | Δplace vs starter | Δplace vs rackforge | Δscore vs rackforge |",
+      "| agent | mean place | win rate | score | others' score | coins left | tiles left | Δplace vs starter | Δplace vs rabbot | Δscore vs rabbot |",
       "|---|---|---|---|---|---|---|---|---|---|",
     );
     const paired = (a: string, b: string, f: (r: JobResult) => number) => {
@@ -328,8 +328,8 @@ export function report(results: JobResult[], agents: string[], settings: string[
       if (!m) continue;
       const xs = [...m.values()];
       const vs = paired(agent, "starter", (r) => r.place);
-      const vp = paired(agent, "rackforge", (r) => r.place);
-      const vsc = paired(agent, "rackforge", (r) => r.score);
+      const vp = paired(agent, "rabbot", (r) => r.place);
+      const vsc = paired(agent, "rabbot", (r) => r.score);
       lines.push(
         `| ${agent} | ${fmt(est(xs.map((r) => r.place)))} | ${fmt(est(xs.map((r) => r.win * 100)), 1)}% | ${fmt(est(xs.map((r) => r.score)), 1)} | ${est(xs.map((r) => r.others)).mean.toFixed(1)} | ${est(xs.map((r) => r.coins)).mean.toFixed(1)} | ${est(xs.map((r) => r.tiles)).mean.toFixed(2)} | ${vs ? fmt(vs) : "-"} | ${vp ? fmt(vp) : "-"} | ${vsc ? fmt(vsc, 1) : "-"} |`,
       );
@@ -360,7 +360,7 @@ async function main() {
   const secs = (performance.now() - t0) / 1000;
   const ms = results.map((r) => r.ms);
   const head = [
-    `RackForge evaluation: ${jobs.length} games in ${secs.toFixed(0)} s (${(jobs.length / secs).toFixed(1)}/s, ${args.workers} workers), seed ${args.seed}, ${args.firstPrice ? "FirstPrice" : "Vickrey"}, model ${args.model ? "on" : "off"}.`,
+    `RABBOT evaluation: ${jobs.length} games in ${secs.toFixed(0)} s (${(jobs.length / secs).toFixed(1)}/s, ${args.workers} workers), seed ${args.seed}, ${args.firstPrice ? "FirstPrice" : "Vickrey"}, model ${args.model ? "on" : "off"}.`,
     `Mean match time ${est(ms).mean.toFixed(0)} ms. Intervals are 95% over deals; Δ columns are paired by deal (negative Δplace = better).`,
     "",
   ];

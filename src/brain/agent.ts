@@ -1,4 +1,4 @@
-// RackForgeAgent: RackForge's decisions for one seat. See README.md for the
+// RABBOTAgent: RABBOT's decisions for one seat. See README.md for the
 // strategy and the evidence; each piece lives in its own module:
 //   belief.ts  unseen tiles and opponents' racks from public history
 //   value.ts   letter values by simulated futures (CRN sampling)
@@ -99,7 +99,7 @@ class MatchState {
   }
 }
 
-export interface RackForgeOptions {
+export interface RABBOTOptions {
   params: Params;
   mode: Mode;
   seed: number;
@@ -107,19 +107,19 @@ export interface RackForgeOptions {
   model?: BidModel & { refresh?: (o?: { budgetMs?: number; botIds?: number[] }) => void };
 }
 
-export class RackForgeAgent implements Agent {
-  readonly name = "rackforge";
+export class RABBOTAgent implements Agent {
+  readonly name = "rabbot";
   readonly p: Params;
   readonly mode: Mode;
   private readonly seed: number;
   private readonly engine: WordEngine;
-  private readonly model: RackForgeOptions["model"];
+  private readonly model: RABBOTOptions["model"];
   private readonly part: Partitioner;
   private st: MatchState | undefined;
   /** Why the latest bid was what it was. */
   lastTrace: BidTrace | undefined;
 
-  constructor(o: RackForgeOptions) {
+  constructor(o: RABBOTOptions) {
     this.p = o.params;
     this.mode = o.mode;
     this.seed = o.seed >>> 0;

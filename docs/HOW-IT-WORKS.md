@@ -1,4 +1,4 @@
-# How RackForge works
+# How RABBOT works
 
 1. Track the rack, balance, public auctions, and word plays.
 2. Reconstruct an estimate of unseen letters and each opponent's spending.

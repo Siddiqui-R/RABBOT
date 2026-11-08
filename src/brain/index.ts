@@ -1,7 +1,7 @@
-// RackForge's strategy, loaded by name by the simulator and the live bot.
-// 'rackforge' is the strategy's internal id. It
-// remembers every opponent), hence RackForgeAgent, the 'rackforge' seat spec in the
-// simulator, `--agent rackforge` and the RACKFORGE_* environment variables.
+// RABBOT's strategy, loaded by name by the simulator and the live bot.
+// 'rabbot' is the strategy's internal id. It
+// remembers every opponent), hence RABBOTAgent, the 'rabbot' seat spec in the
+// simulator, `--agent rabbot` and the RABBOT_* environment variables.
 //
 //   createAgent({ params?, mode?: 'live' | 'sim', seed?, model? }): Agent
 //
@@ -11,11 +11,11 @@
 
 import type { Agent } from "../core/types.js";
 import { getWordEngine } from "../core/words.js";
-import { RackForgeAgent, type Mode, type RackForgeOptions } from "./agent.js";
+import { RABBOTAgent, type Mode, type RABBOTOptions } from "./agent.js";
 import type { BidModel } from "./market.js";
 import { resolveParams, type Params } from "./params.js";
 
-export { RackForgeAgent, type BidTrace, type Mode } from "./agent.js";
+export { RABBOTAgent, type BidTrace, type Mode } from "./agent.js";
 export { DEFAULT_PARAMS, resolveParams, type Params } from "./params.js";
 export type { BidModel } from "./market.js";
 
@@ -26,7 +26,7 @@ export interface CreateOptions {
   model?: unknown;
 }
 
-function asModel(m: unknown): RackForgeOptions["model"] {
+function asModel(m: unknown): RABBOTOptions["model"] {
   if (!m || typeof m !== "object") return undefined;
   const o = m as Record<string, unknown>;
   if (typeof o.predictBid !== "function" || typeof o.strategyOf !== "function") return undefined;
@@ -34,7 +34,7 @@ function asModel(m: unknown): RackForgeOptions["model"] {
 }
 
 export function createAgent(opts: CreateOptions = {}): Agent {
-  return new RackForgeAgent({
+  return new RABBOTAgent({
     params: resolveParams(opts.params ?? {}),
     mode: opts.mode ?? "live",
     seed: opts.seed ?? 0x13,
